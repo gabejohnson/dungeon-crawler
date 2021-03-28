@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.4" tiledversion="1.4.3" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="16" tileheight="16" infinite="0" nextlayerid="3" nextobjectid="1">
+<map version="1.4" tiledversion="1.4.3" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="46">
  <editorsettings>
   <export target="../public/tiles/dungeon-01.json" format="json"/>
  </editorsettings>
@@ -4709,4 +4709,28 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup id="3" name="Chests">
+  <object id="1" gid="596" x="31.8936" y="61.1915" width="16" height="16"/>
+  <object id="3" gid="596" x="640.936" y="95.234" width="16" height="16"/>
+  <object id="4" gid="596" x="51.5745" y="367.574" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="4" name="Lizards">
+  <object id="5" name="lizard1" type="Lizard" gid="491" x="112.213" y="175.553" width="16" height="16"/>
+  <object id="6" name="lizard2" type="Lizard" gid="491" x="118.596" y="437.787" width="16" height="16"/>
+  <object id="7" name="lizard4" type="Lizard" gid="491" x="652.106" y="223.426" width="16" height="16"/>
+  <object id="8" name="lizard3" type="Lizard" gid="491" x="570.723" y="318.106" width="16" height="16"/>
+  <object id="10" name="lizard7" type="Lizard" gid="491" x="193.596" y="134.596" width="16" height="16"/>
+  <object id="11" name="lizard5" type="Lizard" gid="491" x="224.447" y="419.17" width="16" height="16"/>
+  <object id="12" name="lizard6" type="Lizard" gid="491" x="200.511" y="488.851" width="16" height="16"/>
+  <object id="13" name="lizard8" type="Lizard" gid="491" x="176.574" y="75.5532" width="16" height="16"/>
+  <object id="14" name="lizard9" type="Lizard" gid="491" x="356.362" y="108.532" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="5" name="Wizards">
+  <object id="40" name="wizard1" type="Wizard" gid="363" x="152.638" y="199.489" width="16" height="16"/>
+  <object id="41" name="wizard2" type="Wizard" gid="363" x="214.34" y="173.383" width="16" height="16"/>
+  <object id="42" name="wizard3" type="Wizard" gid="363" x="160.617" y="370.191" width="16" height="16"/>
+  <object id="43" name="wizard4" type="Wizard" gid="363" x="144.128" y="465.936" width="16" height="16"/>
+  <object id="44" name="wizard5" type="Wizard" gid="363" x="698.383" y="283.489" width="16" height="16"/>
+  <object id="45" name="wizard6" type="Wizard" gid="363" x="565.404" y="186.149" width="16" height="16"/>
+ </objectgroup>
 </map>
