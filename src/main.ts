@@ -20,3 +20,4 @@ const config: Phaser.Types.Core.GameConfig = {
     zoom: 2,
   },
 };
+export default new Phaser.Game(config);
