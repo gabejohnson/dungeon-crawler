@@ -8,9 +8,18 @@ enum Direction {
   Right,
 }
 
+enum HealthState {
+  Idle,
+  Damage,
+}
+
 export default class Wizard extends Phaser.Physics.Arcade.Sprite {
+  private damageVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   private direction: Direction = Phaser.Math.Between(0, 3);
+  private sinceDamaged: number = 0;
   private speed: number = 50;
+  private healthState: HealthState = HealthState.Idle;
+  private hitpoints: number = 2;
   private moveEvent: Phaser.Time.TimerEvent;
   constructor(
     scene: Phaser.Scene,
@@ -38,9 +47,31 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  destroy(fromScene?: boolean) {
-    this.moveEvent.destroy();
-    super.destroy();
+  get dead(): boolean {
+    return this.hitpoints <= 0;
+  }
+
+  handleDamage(weapon: Phaser.Physics.Arcade.Sprite, damage: number) {
+    if (this.healthState === HealthState.Idle) {
+      this.hitpoints -= damage;
+      if (this.dead) {
+        console.log(`Dead`);
+        this.moveEvent.destroy();
+        super.destroy();
+      } else {
+        this.damageVector = new Phaser.Math.Vector2(
+          this.x - weapon.x,
+          this.y - weapon.y
+        )
+          .normalize()
+          .scale(200);
+        this.setTint(0xff0000);
+        this.sinceDamaged = 0;
+        this.healthState = HealthState.Damage;
+
+        console.log(`Hits remaining: ${this.hitpoints}`);
+      }
+    }
   }
 
   private handleTileCollision(
@@ -55,6 +86,20 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
 
   preUpdate(t: number, dt: number) {
     super.preUpdate(t, dt);
+    switch (this.healthState) {
+      case HealthState.Idle:
+        break;
+      case HealthState.Damage:
+        this.sinceDamaged += dt;
+        if (this.sinceDamaged > 250) {
+          this.healthState = HealthState.Idle;
+          this.setTint(0xffffff);
+          this.sinceDamaged = 0;
+          this.damageVector = new Phaser.Math.Vector2(0, 0);
+        }
+        break;
+    }
+
     const vectors = { x: 0, y: 0 };
     switch (this.direction) {
       case Direction.Up:
@@ -70,6 +115,9 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
         vectors.x = this.speed;
         break;
     }
-    this.setVelocity(vectors.x, vectors.y);
+    this.setVelocity(
+      vectors.x + this.damageVector.x,
+      vectors.y + this.damageVector.y
+    );
   }
 }

@@ -177,6 +177,6 @@ const handleKnifeWizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
   _wizard: Phaser.GameObjects.GameObject
 ) => {
-  (_wizard as Wizard).destroy();
+  (_wizard as Wizard).handleDamage(_knife as Phaser.Physics.Arcade.Sprite, 1);
   disableImage(_knife as Phaser.Physics.Arcade.Image);
 };
