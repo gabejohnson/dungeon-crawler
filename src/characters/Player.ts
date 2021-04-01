@@ -40,42 +40,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   private _coins: number = 0;
   private _health: number = 6;
   private activeChest?: Chest;
+  private aimTarget: { x: number; y: number } = { x: 0, y: 0 };
   private direction: Direction;
-  private sinceDamaged: number = 0;
   private healthState: HealthState = HealthState.Idle;
   private knives?: Phaser.Physics.Arcade.Group;
+  private moveTarget?: { x: number; y: number };
+  private sinceDamaged: number = 0;
   private speed: number = 100;
-
-  get health() {
-    return this._health;
-  }
 
   get dead(): boolean {
     return this._health <= 0;
   }
 
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    texture: string,
-    frame?: string | number
-  ) {
-    super(scene, x, y, texture, frame);
-
-    this.anims.play(AnimationKeys.PlayerIdleDown);
-    this.direction = Direction.South;
-  }
-
-  setKnives(knives: Phaser.Physics.Arcade.Group) {
-    this.knives = knives;
-  }
-
-  setChest(chest: Chest) {
-    this.activeChest = chest;
-  }
-
-  handleDamage(sprite: Phaser.Physics.Arcade.Sprite) {
+  private handleDamage(sprite: Phaser.Physics.Arcade.Sprite): void {
     if (this.healthState === HealthState.Idle) {
       this._health -= 1;
       if (this.dead) {
@@ -96,6 +73,57 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         EventCenter.sceneEvents.emit(Events.PlayerHealthChanged, this.health);
       }
     }
+  }
+  get health(): number {
+    return this._health;
+  }
+
+  get moving(): boolean {
+    const { x, y } = this.body.velocity;
+    return x !== 0 && y !== 0;
+  }
+
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    texture: string,
+    frame?: string | number
+  ) {
+    super(scene, x, y, texture, frame);
+
+    this.anims.play(AnimationKeys.PlayerIdleDown);
+    this.direction = Direction.South;
+  }
+
+  stop(): this {
+    this.moveTarget = undefined;
+    this.idle();
+    return super.stop();
+  }
+
+  aimAt(target: { x: number; y: number }): void {
+    this.aimTarget = target;
+  }
+
+  moveTo(target: { x: number; y: number }): void {
+    this.moveTarget = target;
+    this.idle();
+  }
+
+  setKnives(knives: Phaser.Physics.Arcade.Group): void {
+    this.knives = knives;
+  }
+
+  collideWithChest(chest: Chest): void {
+    if (chest !== this.activeChest) {
+      this.activeChest = chest;
+      this.stop();
+    }
+  }
+
+  collideWithSprite(sprite: Phaser.Physics.Arcade.Sprite): void {
+    this.handleDamage(sprite);
   }
 
   preUpdate(t: number, dt: number) {
@@ -118,17 +146,46 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {
-    if (cursors == null) return;
+  private facePlayer(): void {
+    switch (this.direction) {
+      case Direction.NorthEast:
+        this.faceRight();
+        break;
 
-    if (
-      this.healthState === HealthState.Damage ||
-      this.healthState === HealthState.Dead
-    )
-      return;
+      case Direction.SouthEast:
+        this.faceRight();
+        break;
 
-    this.direction = getDirection(cursors);
+      case Direction.SouthWest:
+        this.faceDown();
+        break;
 
+      case Direction.NorthWest:
+        this.faceLeft();
+        break;
+
+      case Direction.North:
+        this.faceUp();
+        break;
+
+      case Direction.East:
+        this.faceRight();
+        break;
+
+      case Direction.South:
+        this.faceDown();
+        break;
+
+      case Direction.West:
+        this.faceLeft();
+        break;
+
+      case Direction.None:
+        break;
+    }
+  }
+
+  private moveWithKeys(): void {
     switch (this.direction) {
       case Direction.NorthEast:
         this.moveNorthEast();
@@ -166,45 +223,82 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.idle();
         break;
     }
+  }
+
+  private moveWithTarget(): void {
+    if (this.moveTarget != null) {
+      if (!this.moving) {
+        const { x, y } = calculateUnitVector(
+          { x: this.x, y: this.y },
+          this.moveTarget
+        );
+        this.move({ x: x * this.speed, y: y * this.speed });
+      } else if (this.atTarget()) {
+        this.moveTarget = undefined;
+        this.idle();
+      }
+    }
+  }
+
+  update(cursors: Phaser.Types.Input.Keyboard.CursorKeys): void {
+    if (cursors == null) return;
 
     if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-      if (this.activeChest) {
+      if (this.activeChest && !this.activeChest.isOpen) {
         this._coins += this.activeChest.open();
         EventCenter.sceneEvents.emit(Events.PlayerCoinsChanged, this._coins);
       } else {
         this.throwKnife();
       }
     }
+
+    if (
+      this.healthState !== HealthState.Damage &&
+      this.healthState !== HealthState.Dead
+    ) {
+      this.direction = this.getDirection(cursors);
+      this.facePlayer();
+      if (directionalKeyIsDown(cursors)) {
+        // arrow key navigation override
+        this.moveTarget = undefined;
+      }
+      if (this.moveTarget == null) {
+        this.moveWithKeys();
+      } else {
+        this.moveWithTarget();
+      }
+    }
   }
 
-  private throwKnife() {
+  private atTarget(): boolean {
+    const { x, y } = this.distancetotarget();
+    return x === 0 && y === 0;
+  }
+
+  private throwKnife(): void {
     const knife = this.knives?.get(
       this.x,
       this.y,
       TextureKeys.Knife
     ) as Phaser.Physics.Arcade.Image;
     if (knife != null) {
-      const vector = new Phaser.Math.Vector2(0, 0);
       let [bodyWidth, bodyHeight] = [0, 0];
       switch (this.anims.currentAnim.key) {
         case AnimationKeys.PlayerIdleDown:
         case AnimationKeys.PlayerRunDown:
-          vector.y = 1;
           [bodyWidth, bodyHeight] = [knife.height, knife.width];
           break;
         case AnimationKeys.PlayerIdleSide:
         case AnimationKeys.PlayerRunSide:
-          vector.x = this.scaleX;
           [bodyWidth, bodyHeight] = [knife.width, knife.height];
           break;
         case AnimationKeys.PlayerIdleUp:
         case AnimationKeys.PlayerRunUp:
-          vector.y = -1;
           [bodyWidth, bodyHeight] = [knife.height, knife.width];
           break;
       }
-
-      enableKnife({ width: bodyWidth, height: bodyHeight }, vector, knife);
+      enableKnife({ width: bodyWidth, height: bodyHeight }, knife);
+      fireKnife(this, this.aimTarget, knife);
     }
   }
 
@@ -225,7 +319,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   private moveNorth() {
     this.move({ x: 0, y: -this.speed });
-    this.faceUp();
+    this.aimAt({ x: this.x, y: this.y - 10 });
   }
 
   private moveNorthEast() {
@@ -233,12 +327,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       x: this.speed / 2,
       y: -this.speed / 2,
     });
-    this.faceRight();
+    this.aimAt({ x: this.x + 5, y: this.y - 5 });
   }
 
   private moveEast() {
     this.move({ x: this.speed, y: 0 });
-    this.faceRight();
+    this.aimAt({ x: this.x + 10, y: this.y });
   }
 
   private moveSouthEast() {
@@ -246,12 +340,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       x: this.speed / 2,
       y: this.speed / 2,
     });
-    this.faceDown();
+    this.aimAt({ x: this.x + 5, y: this.y + 5 });
   }
 
   private moveSouth() {
     this.move({ x: 0, y: this.speed });
-    this.faceDown();
+    this.aimAt({ x: this.x, y: this.y + 10 });
   }
 
   private moveSouthWest() {
@@ -259,12 +353,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       x: -this.speed / 2,
       y: this.speed / 2,
     });
-    this.faceDown();
+    this.aimAt({ x: this.x - 5, y: this.y + 5 });
   }
 
   private moveWest() {
     this.move({ x: -this.speed, y: 0 });
-    this.faceLeft();
+    this.aimAt({ x: this.x - 10, y: this.y });
   }
 
   private moveNorthWest() {
@@ -272,7 +366,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       x: -this.speed / 2,
       y: -this.speed / 2,
     });
-    this.faceLeft();
+    this.aimAt({ x: this.x - 5, y: this.y - 5 });
   }
 
   private move(velocity: { x: number; y: number }) {
@@ -299,27 +393,125 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.scaleX = 1;
     this.body.offset.x = 8;
   }
+
+  distancetotarget(): { x: number; y: number } {
+    let dx = 0;
+    let dy = 0;
+
+    if (this.moveTarget) {
+      dx = this.moveTarget.x - this.x;
+      dy = this.moveTarget.y - this.y;
+
+      if (Math.abs(dx) < 5) {
+        dx = 0;
+      }
+      if (Math.abs(dy) < 5) {
+        dy = 0;
+      }
+    }
+    return { x: dx, y: dy };
+  }
+
+  getDirection(cursors: Phaser.Types.Input.Keyboard.CursorKeys): Direction {
+    let leftDown;
+    let rightDown;
+    let upDown;
+    let downDown;
+
+    if (this.moveTarget != null) {
+      const { x: dx, y: dy } = this.distancetotarget();
+
+      // a key is down based on dx and dy
+      leftDown = dx < 0;
+      rightDown = dx > 0;
+      upDown = dy < 0;
+      downDown = dy > 0;
+    } else {
+      // use cursor to determine direction
+      leftDown = cursors.left?.isDown;
+      rightDown = cursors.right?.isDown;
+      upDown = cursors.up?.isDown;
+      downDown = cursors.down?.isDown;
+    }
+
+    switch (true) {
+      case upDown && rightDown:
+        return Direction.NorthEast;
+
+      case rightDown && downDown:
+        return Direction.SouthEast;
+
+      case downDown && leftDown:
+        return Direction.SouthWest;
+
+      case leftDown && upDown:
+        return Direction.NorthWest;
+
+      case upDown:
+        return Direction.North;
+
+      case rightDown:
+        return Direction.East;
+
+      case downDown:
+        return Direction.South;
+
+      case leftDown:
+        return Direction.West;
+
+      default:
+        return Direction.None;
+    }
+  }
 }
 
 const enableKnife = (
   dimensions: { width: number; height: number },
-  dir: Phaser.Math.Vector2,
   knife: Phaser.Physics.Arcade.Image
-) => {
-  const knifeOffset = 15;
-  const knifeVelocity = 300;
+): void => {
   knife.setActive(true);
   knife.setVisible(true);
-  knife.setRotation(dir.angle());
-  knife.setVelocity(dir.x * knifeVelocity, dir.y * knifeVelocity);
-  knife.x += dir.x * knifeOffset;
-  knife.y += dir.y * knifeOffset;
   const body = knife.body as Phaser.Physics.Arcade.Body;
   body.setSize(dimensions.width, dimensions.height);
   body.setEnable(true);
 };
 
-const injurePlayer = (boundDirection: Phaser.Math.Vector2, player: Player) => {
+const calculateUnitVector = (
+  origin: { x: number; y: number },
+  target: { x: number; y: number }
+): Phaser.Math.Vector2 => {
+  const vectorX = target.x - origin.x;
+  const vectorY = target.y - origin.y;
+  const vector = Math.sqrt(vectorX ** 2 + vectorY ** 2);
+  return new Phaser.Math.Vector2(vectorX / vector, vectorY / vector);
+};
+
+const directionalKeyIsDown = ({
+  up,
+  down,
+  left,
+  right,
+}: Phaser.Types.Input.Keyboard.CursorKeys): boolean =>
+  up?.isDown || down?.isDown || left?.isDown || right?.isDown;
+
+const fireKnife = (
+  origin: { x: number; y: number },
+  target: { x: number; y: number },
+  knife: Phaser.Physics.Arcade.Image
+): void => {
+  const vector = calculateUnitVector(origin, target);
+  const knifeOffset = 15;
+  const knifeVelocity = 300;
+  knife.setRotation(vector.angle());
+  knife.setVelocity(vector.x * knifeVelocity, vector.y * knifeVelocity);
+  knife.x += vector.x * knifeOffset;
+  knife.y += vector.y * knifeOffset;
+};
+
+const injurePlayer = (
+  boundDirection: Phaser.Math.Vector2,
+  player: Player
+): void => {
   player.setVelocity(boundDirection.x, boundDirection.y);
   player.setTint(0xff0000);
 };
@@ -349,34 +541,3 @@ Phaser.GameObjects.GameObjectFactory.register(
     return player;
   }
 );
-
-const getDirection = (cursors: Phaser.Types.Input.Keyboard.CursorKeys) => {
-  switch (true) {
-    case cursors.up?.isDown && cursors.right?.isDown:
-      return Direction.NorthEast;
-
-    case cursors.right?.isDown && cursors.down?.isDown:
-      return Direction.SouthEast;
-
-    case cursors.down?.isDown && cursors.left?.isDown:
-      return Direction.SouthWest;
-
-    case cursors.left?.isDown && cursors.up?.isDown:
-      return Direction.NorthWest;
-
-    case cursors.up?.isDown:
-      return Direction.North;
-
-    case cursors.right?.isDown:
-      return Direction.East;
-
-    case cursors.down?.isDown:
-      return Direction.South;
-
-    case cursors.left?.isDown:
-      return Direction.West;
-
-    default:
-      return Direction.None;
-  }
-};

@@ -14,6 +14,10 @@ export default class Chest extends Phaser.Physics.Arcade.Sprite {
     this.play(AnimationKeys.ChestClosed);
   }
 
+  get isOpen(): boolean {
+    return this.anims.currentAnim.key === AnimationKeys.ChestOpen;
+  }
+
   open() {
     if (this.anims.currentAnim.key !== AnimationKeys.ChestClosed) {
       return 0;

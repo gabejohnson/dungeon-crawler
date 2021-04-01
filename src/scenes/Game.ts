@@ -3,21 +3,16 @@ import SceneKeys from "~/consts/SceneKeys";
 import TextureKeys from "~/consts/TextureKeys";
 import * as Debug from "~/utils/debug";
 import * as EnemyAnims from "~/anims/EnemyAnims";
-import * as EventCenter from "~/events/EventCenter";
 import * as CharacterAnims from "~/anims/CharacterAnims";
 import * as TreasureAnims from "~/anims/TreasureAnims";
 import Lizard from "~/enemies/Lizard";
 import Player from "~/characters/Player";
-import Events from "~/consts/events";
 import "~/characters/Player";
-import AnimationKeys from "~/consts/AnimationKeys";
 import Chest from "~/items/Chest";
 import Wizard from "~/enemies/Wizard";
 
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  // private knives!: Phaser.Physics.Arcade.Group;
-  // private lizards!: Phaser.Physics.Arcade.Group;
   private player!: Player;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
@@ -108,17 +103,38 @@ export default class Game extends Phaser.Scene {
     this.playerLizardsCollider = this.physics.add.collider(
       lizards,
       this.player,
-      handlePlayerLizardCollision
+      handlePlayerSpriteCollision
     );
     this.playerWizardsCollider = this.physics.add.collider(
       wizards,
       this.player,
-      handlePlayerWizardCollision
+      handlePlayerSpriteCollision
     );
     this.physics.add.collider(knives, wallsLayer, handleKnifeWallCollision);
     this.physics.add.collider(knives, lizards, handleKnifeLizardCollision);
     this.physics.add.collider(knives, wizards, handleKnifeWizardCollision);
     this.cameras.main.startFollow(this.player, true);
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_UP,
+      (
+        pointer: Phaser.Input.Pointer,
+        _: Array<Phaser.GameObjects.GameObject>
+      ) => this.player.moveTo({ x: pointer.worldX, y: pointer.worldY })
+    );
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_MOVE,
+      (
+        pointer: Phaser.Input.Pointer,
+        _: Array<Phaser.GameObjects.GameObject>
+      ) => this.player.aimAt({ x: pointer.worldX, y: pointer.worldY })
+    );
+
+    this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Input.Events.POINTER_UP);
+      this.events.off(Phaser.Input.Events.POINTER_MOVE);
+    });
   }
 
   update(t: number, dt: number) {
@@ -135,18 +151,14 @@ export default class Game extends Phaser.Scene {
 }
 
 const handlePlayerChestCollision = (
-  _player: Phaser.GameObjects.GameObject,
-  _chest: Phaser.GameObjects.GameObject
-) => {
-  const chest = _chest as Chest;
-  const player = _player as Player;
-  player.setChest(chest);
-};
+  player: Phaser.GameObjects.GameObject,
+  chest: Phaser.GameObjects.GameObject
+) => (player as Player).collideWithChest(chest as Chest);
 
 const handleKnifeWallCollision = (
-  _knife: Phaser.GameObjects.GameObject,
+  knife: Phaser.GameObjects.GameObject,
   _: Phaser.GameObjects.GameObject
-) => disableImage(_knife as Phaser.Physics.Arcade.Image);
+) => disableImage(knife as Phaser.Physics.Arcade.Image);
 
 const disableImage = (image: Phaser.Physics.Arcade.Image) => {
   image.setActive(false);
@@ -155,10 +167,11 @@ const disableImage = (image: Phaser.Physics.Arcade.Image) => {
   body.setEnable(false);
 };
 
-const handlePlayerLizardCollision = (
+const handlePlayerSpriteCollision = (
   player: Phaser.GameObjects.GameObject,
-  lizard: Phaser.GameObjects.GameObject
-) => (player as Player).handleDamage(lizard as Lizard);
+  sprite: Phaser.GameObjects.GameObject
+) =>
+  (player as Player).collideWithSprite(sprite as Phaser.Physics.Arcade.Sprite);
 
 const handleKnifeLizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
@@ -167,11 +180,6 @@ const handleKnifeLizardCollision = (
   (_lizard as Lizard).destroy();
   disableImage(_knife as Phaser.Physics.Arcade.Image);
 };
-
-const handlePlayerWizardCollision = (
-  player: Phaser.GameObjects.GameObject,
-  wizard: Phaser.GameObjects.GameObject
-) => (player as Player).handleDamage(wizard as Wizard);
 
 const handleKnifeWizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
