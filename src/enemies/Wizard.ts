@@ -71,21 +71,16 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     if (this.healthState === HealthState.Idle) {
       this.hitpoints -= damage;
       if (this.dead) {
-        console.log(`Dead`);
         this.moveEvent.destroy();
         super.destroy();
       } else {
-        this.damageVector = new Phaser.Math.Vector2(
-          this.x - weapon.x,
-          this.y - weapon.y
-        )
+        this.damageVector
+          .set(this.x - weapon.x, this.y - weapon.y)
           .normalize()
           .scale(200);
         this.setTint(0xff0000);
         this.sinceDamaged = 0;
         this.healthState = HealthState.Damage;
-
-        console.log(`Hits remaining: ${this.hitpoints}`);
       }
     }
   }
@@ -111,7 +106,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
           this.healthState = HealthState.Idle;
           this.setTint(0xffffff);
           this.sinceDamaged = 0;
-          this.damageVector = new Phaser.Math.Vector2(0, 0);
+          this.damageVector.reset();
         }
         break;
     }

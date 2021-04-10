@@ -124,6 +124,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   collideWithWeapon(weapon: { damage: number; x: number; y: number }): void {
     this.handleDamage(weapon);
+    this.moveTarget = undefined;
   }
 
   preUpdate(t: number, dt: number): void {
@@ -228,10 +229,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   private moveWithTarget(): void {
     if (this.moveTarget != null) {
       if (!this.moving) {
-        const { x, y } = calculateUnitVector(
-          { x: this.x, y: this.y },
-          this.moveTarget
-        );
+        const { x, y } = calculateUnitVector(this, this.moveTarget);
         this.move({ x: x * this.speed, y: y * this.speed });
       } else if (this.atTarget()) {
         this.moveTarget = undefined;
@@ -479,12 +477,8 @@ const enableKnife = (
 const calculateUnitVector = (
   origin: { x: number; y: number },
   target: { x: number; y: number }
-): Phaser.Math.Vector2 => {
-  const vectorX = target.x - origin.x;
-  const vectorY = target.y - origin.y;
-  const vector = Math.sqrt(vectorX ** 2 + vectorY ** 2);
-  return new Phaser.Math.Vector2(vectorX / vector, vectorY / vector);
-};
+): Phaser.Math.Vector2 =>
+  new Phaser.Math.Vector2(target.x - origin.x, target.y - origin.y).normalize();
 
 const directionalKeyIsDown = ({
   up,
@@ -509,7 +503,7 @@ const fireKnife = (
 };
 
 const injurePlayer = (
-  boundDirection: Phaser.Math.Vector2,
+  boundDirection: { x: number; y: number },
   player: Player
 ): void => {
   player.setVelocity(boundDirection.x, boundDirection.y);
