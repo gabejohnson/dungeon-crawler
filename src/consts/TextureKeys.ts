@@ -3,6 +3,7 @@ enum TextureKeys {
   Knife = "knife",
   Lizard = "lizard",
   Player = "player",
+  Sparkle = "sparkle",
   Tiles = "tiles",
   Treasure = "treasure",
   UIHeartEmpty = "ui-heart-empty",

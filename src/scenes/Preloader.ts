@@ -7,7 +7,7 @@ export default class Preloader extends Phaser.Scene {
     super(SceneKeys.Preloader);
   }
 
-  preload() {
+  preload(): void {
     this.load.image(TextureKeys.Tiles, "tiles/dungeon_tiles.png");
     this.load.tilemapTiledJSON(TextureKeys.Dungeon, "tiles/dungeon-01.json");
     this.load.atlas(
@@ -34,9 +34,10 @@ export default class Preloader extends Phaser.Scene {
     this.load.image(TextureKeys.UIHeartFull, "ui/ui_heart_full.png");
     this.load.image(TextureKeys.UIHeartHalf, "ui/ui_heart_half.png");
     this.load.image(TextureKeys.Knife, "weapons/weapon_knife.png");
+    this.load.image(TextureKeys.Sparkle, "weapons/diamond_sparkle.png");
   }
 
-  create() {
+  create(): void {
     this.scene.start(SceneKeys.Game);
   }
 }

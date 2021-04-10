@@ -3,6 +3,7 @@ import SceneKeys from "~/consts/SceneKeys";
 import TextureKeys from "~/consts/TextureKeys";
 import * as Debug from "~/utils/debug";
 import * as EnemyAnims from "~/anims/EnemyAnims";
+import * as EventCenter from "~/events/EventCenter";
 import * as CharacterAnims from "~/anims/CharacterAnims";
 import * as TreasureAnims from "~/anims/TreasureAnims";
 import Lizard from "~/enemies/Lizard";
@@ -10,13 +11,20 @@ import Player from "~/characters/Player";
 import "~/characters/Player";
 import Chest from "~/items/Chest";
 import Wizard from "~/enemies/Wizard";
+import Events from "~/consts/events";
 
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private player!: Player;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
+  private sparkles!: Phaser.GameObjects.Particles.ParticleEmitterManager;
   private wizards!: Phaser.Physics.Arcade.Group;
+  private wizardWeapons: WeakMap<
+    Phaser.GameObjects.GameObject,
+    Phaser.GameObjects.Particles.ParticleEmitter
+  > = new WeakMap();
+
   constructor() {
     super(SceneKeys.Game);
   }
@@ -81,6 +89,22 @@ export default class Game extends Phaser.Scene {
     });
 
     const fireballs = this.physics.add.group();
+    this.sparkles = this.add.particles(TextureKeys.Sparkle);
+
+    EventCenter.sceneEvents.on(
+      Events.WizardFireballThrown,
+      this.handleWizardFireballThrown,
+      this
+    );
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      EventCenter.sceneEvents.off(
+        Events.WizardFireballThrown,
+        this.handleWizardFireballThrown,
+        this
+      );
+    });
+
     const wallsLayer = map
       .createLayer("Walls", tileset)
       .setCollisionByProperty({ collides: true });
@@ -158,6 +182,20 @@ export default class Game extends Phaser.Scene {
       (wizard as Wizard).update(this.player);
     });
     }
+  handleWizardFireballThrown(eventData: {
+    fireball: Phaser.GameObjects.GameObject;
+  }) {
+    this.wizardWeapons.set(
+      eventData.fireball,
+      this.sparkles.createEmitter({
+        lifespan: 200,
+        scale: { start: 0.07, end: 0 },
+        blendMode: "ADD",
+        // tint: 0xff000,
+        follow: eventData.fireball,
+      })
+    );
+  }
   }
 }
 

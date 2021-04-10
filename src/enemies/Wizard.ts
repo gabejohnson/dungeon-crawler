@@ -1,5 +1,7 @@
 import Phaser from "phaser";
+import * as EventCenter from "~/events/EventCenter";
 import AnimationKeys from "~/consts/AnimationKeys";
+import Events from "~/consts/Events";
 
 enum Direction {
   Up,
@@ -189,6 +191,7 @@ const fireFireball = (
   );
   fireball.x += vector.x;
   fireball.y += vector.y;
+  EventCenter.sceneEvents.emit(Events.WizardFireballThrown, { fireball });
 };
 
 const calculateUnitVector = (
