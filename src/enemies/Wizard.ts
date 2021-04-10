@@ -26,6 +26,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
   private healthState: HealthState = HealthState.Idle;
   private hitpoints: number = 2;
   private moveEvent: Phaser.Time.TimerEvent;
+  private walls?: Phaser.Tilemaps.TilemapLayer;
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -54,6 +55,9 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  setWalls(walls: Phaser.Tilemaps.TilemapLayer): void {
+    this.walls = walls;
+  }
 
   changeDirection(): void {
     this.direction = Phaser.Math.Between(0, 3);
@@ -143,8 +147,9 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
 
   canSeePlayer(playerPosition: { x: number; y: number }): boolean {
     return (
-      Math.abs(playerPosition.x - this.x) <= 1 ||
-      Math.abs(playerPosition.y - this.y) <= 1
+      (Math.abs(playerPosition.x - this.x) <= 1 ||
+        Math.abs(playerPosition.y - this.y) <= 1) &&
+      this.noWallsBlock(playerPosition)
     );
   }
 
@@ -168,6 +173,12 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     enableFireball(fireball);
     fireFireball(this, target, fireball);
   }
+
+  noWallsBlock(target: { x: number; y: number }): boolean {
+    const line = new Phaser.Geom.Line(this.x, this.y, target.x, target.y);
+    return this.walls?.findTile(tileOnPath(line)) == null;
+  }
+}
 
 const enableFireball = (fireball: Phaser.Physics.Arcade.Image): void => {
   fireball.setActive(true);
@@ -199,4 +210,16 @@ const calculateUnitVector = (
   target: { x: number; y: number }
 ): Phaser.Math.Vector2 =>
   new Phaser.Math.Vector2(target.x - origin.x, target.y - origin.y).normalize();
+
+const tileOnPath = (line: Phaser.Geom.Line) => (
+  tile: Phaser.Tilemaps.Tile
+): boolean => {
+  if (!tile.canCollide) {
+    return false;
+  } else {
+    const rectangle = tile.getBounds();
+    return (
+      Phaser.Geom.Intersects.GetLineToRectangle(line, rectangle).length > 0
+    );
   }
+};

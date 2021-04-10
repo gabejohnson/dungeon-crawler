@@ -112,6 +112,7 @@ export default class Game extends Phaser.Scene {
 
     this.wizards.children.each((_wizard: Phaser.GameObjects.GameObject) => {
       const wizard = _wizard as Wizard;
+      wizard.setWalls(wallsLayer);
       wizard.setFireballs(fireballs);
     });
 
