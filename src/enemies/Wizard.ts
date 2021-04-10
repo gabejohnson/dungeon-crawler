@@ -17,6 +17,7 @@ enum HealthState {
 export default class Wizard extends Phaser.Physics.Arcade.Sprite {
   private damageVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   private direction: Direction = Phaser.Math.Between(0, 3);
+  private fireballs?: Phaser.Physics.Arcade.Group;
   private firing: boolean = false;
   private sinceDamaged: number = 0;
   private speed: number = 50;
@@ -134,6 +135,10 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
+  setFireballs(fireballs: Phaser.Physics.Arcade.Group): void {
+    this.fireballs = fireballs;
+  }
+
   canSeePlayer(playerPosition: { x: number; y: number }): boolean {
     return (
       Math.abs(playerPosition.x - this.x) <= 1 ||
@@ -154,5 +159,41 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(3000, () => {
       this.firing = false;
     });
+    const fireball = this.fireballs?.get(
+      this.x,
+      this.y
+    ) as Phaser.Physics.Arcade.Image;
+    enableFireball(fireball);
+    fireFireball(this, target, fireball);
   }
-}
+
+const enableFireball = (fireball: Phaser.Physics.Arcade.Image): void => {
+  fireball.setActive(true);
+  fireball.setVisible(false);
+  const body = fireball.body as Phaser.Physics.Arcade.Body;
+  body.setSize(5, 5);
+  body.setEnable(true);
+};
+
+const fireFireball = (
+  origin: { x: number; y: number },
+  target: { x: number; y: number },
+  fireball: Phaser.Physics.Arcade.Image
+): void => {
+  const vector = calculateUnitVector(origin, target);
+  const fireballVelocity = 300;
+  fireball.setRotation(vector.angle());
+  fireball.setVelocity(
+    vector.x * fireballVelocity,
+    vector.y * fireballVelocity
+  );
+  fireball.x += vector.x;
+  fireball.y += vector.y;
+};
+
+const calculateUnitVector = (
+  origin: { x: number; y: number },
+  target: { x: number; y: number }
+): Phaser.Math.Vector2 =>
+  new Phaser.Math.Vector2(target.x - origin.x, target.y - origin.y).normalize();
+  }

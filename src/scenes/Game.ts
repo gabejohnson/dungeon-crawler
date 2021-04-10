@@ -85,6 +85,11 @@ export default class Game extends Phaser.Scene {
       .createLayer("Walls", tileset)
       .setCollisionByProperty({ collides: true });
 
+    this.wizards.children.each((_wizard: Phaser.GameObjects.GameObject) => {
+      const wizard = _wizard as Wizard;
+      wizard.setFireballs(fireballs);
+    });
+
     const chests = this.physics.add.staticGroup({
       classType: Chest,
     });
