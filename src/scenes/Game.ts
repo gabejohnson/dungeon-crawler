@@ -134,12 +134,12 @@ export default class Game extends Phaser.Scene {
     this.playerLizardsCollider = this.physics.add.collider(
       lizards,
       this.player,
-      handlePlayerSpriteCollision
+      handlePlayerWeaponCollision(1)
     );
     this.playerWizardsCollider = this.physics.add.collider(
       wizards,
       this.player,
-      handlePlayerSpriteCollision
+      handlePlayerWeaponCollision(1)
     );
     this.physics.add.collider(knives, wallsLayer, handleKnifeWallCollision);
     this.physics.add.collider(knives, lizards, handleKnifeLizardCollision);
@@ -216,11 +216,13 @@ const disableImage = (image: Phaser.Physics.Arcade.Image): void => {
   body.setEnable(false);
 };
 
-const handlePlayerSpriteCollision = (
+const handlePlayerWeaponCollision = (damage: number) => (
   player: Phaser.GameObjects.GameObject,
-  sprite: Phaser.GameObjects.GameObject
-) =>
-  (player as Player).collideWithSprite(sprite as Phaser.Physics.Arcade.Sprite);
+  weapon: Phaser.GameObjects.GameObject
+): void => {
+  const { x, y } = (weapon as unknown) as { x: number; y: number };
+  (player as Player).collideWithWeapon({ damage, x, y });
+};
 
 const handleKnifeLizardCollision = (
   _knife: Phaser.GameObjects.GameObject,

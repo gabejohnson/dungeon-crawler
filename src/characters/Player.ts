@@ -52,16 +52,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     return this._health <= 0;
   }
 
-  private handleDamage(sprite: Phaser.Physics.Arcade.Sprite): void {
+  private handleDamage(weapon: { damage: number; x: number; y: number }): void {
     if (this.healthState === HealthState.Idle) {
-      this._health -= 1;
+      this._health -= weapon.damage;
       if (this.dead) {
         killPlayer(this);
         this.healthState = HealthState.Dead;
       } else {
         const dir = new Phaser.Math.Vector2(
-          this.x - sprite.x,
-          this.y - sprite.y
+          this.x - weapon.x,
+          this.y - weapon.y
         )
           .normalize()
           .scale(200);
@@ -122,8 +122,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  collideWithSprite(sprite: Phaser.Physics.Arcade.Sprite): void {
-    this.handleDamage(sprite);
+  collideWithWeapon(weapon: { damage: number; x: number; y: number }): void {
+    this.handleDamage(weapon);
   }
 
   preUpdate(t: number, dt: number): void {
