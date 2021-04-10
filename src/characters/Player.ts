@@ -70,8 +70,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         this.sinceDamaged = 0;
         this.healthState = HealthState.Damage;
-        EventCenter.sceneEvents.emit(Events.PlayerHealthChanged, this.health);
       }
+      EventCenter.sceneEvents.emit(Events.PlayerHealthChanged, this.health);
     }
   }
   get health(): number {
