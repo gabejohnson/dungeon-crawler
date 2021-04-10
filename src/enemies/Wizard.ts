@@ -41,10 +41,15 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     this.moveEvent = scene.time.addEvent({
       delay: 2000,
       callback: () => {
-        this.direction = Phaser.Math.Between(0, 3);
+        this.changeDirection();
       },
       loop: true,
     });
+  }
+
+
+  changeDirection(): void {
+    this.direction = Phaser.Math.Between(0, 3);
   }
 
   get dead(): boolean {
@@ -81,7 +86,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     if (go != this) {
       return;
     }
-    this.direction = Phaser.Math.Between(0, 3);
+    this.changeDirection();
   }
 
   preUpdate(t: number, dt: number): void {
