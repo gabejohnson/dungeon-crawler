@@ -130,7 +130,9 @@ export default class Game extends Phaser.Scene {
     this.physics.add.collider(this.player, wallsLayer);
     this.physics.add.collider(this.player, chests, handlePlayerChestCollision);
     this.physics.add.collider(lizards, wallsLayer);
+    this.physics.add.collider(lizards, chests);
     this.physics.add.collider(this.wizards, wallsLayer);
+    this.physics.add.collider(this.wizards, chests);
     this.playerLizardsCollider = this.physics.add.collider(
       lizards,
       this.player,
