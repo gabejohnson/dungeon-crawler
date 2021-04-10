@@ -16,6 +16,7 @@ import Events from "~/consts/events";
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private player!: Player;
+  private playerFireballsCollider?: Phaser.Physics.Arcade.Collider;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
   private sparkles!: Phaser.GameObjects.Particles.ParticleEmitterManager;
@@ -143,6 +144,13 @@ export default class Game extends Phaser.Scene {
       this.player,
       handlePlayerWeaponCollision(1)
     );
+    this.playerFireballsCollider = this.physics.add.collider(
+      fireballs,
+      this.player,
+      this.handlePlayerFireballsCollision,
+      undefined,
+      this
+    );
     this.physics.add.collider(knives, wallsLayer, handleKnifeWallCollision);
     this.physics.add.collider(knives, lizards, handleKnifeLizardCollision);
     this.physics.add.collider(knives, this.wizards, handleKnifeWizardCollision);
@@ -186,6 +194,10 @@ export default class Game extends Phaser.Scene {
       if (this.playerWizardsCollider?.world) {
         this.playerWizardsCollider?.destroy();
       }
+      if (this.playerFireballsCollider?.world) {
+        this.playerFireballsCollider?.destroy();
+      }
+    }
 
     this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) => {
       (wizard as Wizard).update(this.player);
@@ -216,6 +228,14 @@ export default class Game extends Phaser.Scene {
     this.time.delayedCall(1000, () => emitter?.remove());
     this.wizardWeapons.delete(fireball);
     disableImage(fireball as Phaser.Physics.Arcade.Image);
+  }
+
+  handlePlayerFireballsCollision(
+    player: Phaser.GameObjects.GameObject,
+    fireball: Phaser.GameObjects.GameObject
+  ): void {
+    this.handleFireballCollision(fireball, player);
+    handlePlayerWeaponCollision(2)(player, fireball);
   }
 }
 
