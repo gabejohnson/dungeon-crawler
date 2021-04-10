@@ -236,7 +236,7 @@ export default class Game extends Phaser.Scene {
     fireball: Phaser.GameObjects.GameObject
   ): void {
     this.handleFireballCollision(fireball, player);
-    handlePlayerWeaponCollision(2)(player, fireball);
+    handlePlayerWeaponCollision(1)(player, fireball);
   }
 }
 
