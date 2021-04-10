@@ -16,6 +16,7 @@ export default class Game extends Phaser.Scene {
   private player!: Player;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
+  private wizards!: Phaser.Physics.Arcade.Group;
   constructor() {
     super(SceneKeys.Game);
   }
@@ -60,7 +61,7 @@ export default class Game extends Phaser.Scene {
       lizard.body.offset.y = 10;
     });
 
-    const wizards = this.physics.add.group({
+    this.wizards = this.physics.add.group({
       classType: Wizard,
       createCallback: go => {
         const wizard = go as Wizard;
@@ -70,7 +71,7 @@ export default class Game extends Phaser.Scene {
     EnemyAnims.createWizardAnims(this.anims);
     const wizardsLayer = map.getObjectLayer("Wizards");
     wizardsLayer.objects.forEach(wizardObject => {
-      const wizard = wizards.get(
+      const wizard = this.wizards.get(
         wizardObject.x! + wizardObject.width! * 0.5,
         wizardObject.y! - wizardObject.height! * 0.5,
         TextureKeys.Wizard
@@ -79,6 +80,7 @@ export default class Game extends Phaser.Scene {
       wizard.body.offset.y = 10;
     });
 
+    const fireballs = this.physics.add.group();
     const wallsLayer = map
       .createLayer("Walls", tileset)
       .setCollisionByProperty({ collides: true });
@@ -146,6 +148,10 @@ export default class Game extends Phaser.Scene {
       if (this.playerWizardsCollider?.world) {
         this.playerWizardsCollider?.destroy();
       }
+
+    this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) => {
+      (wizard as Wizard).update(this.player);
+    });
     }
   }
 }

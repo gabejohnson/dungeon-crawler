@@ -6,6 +6,7 @@ enum Direction {
   Down,
   Left,
   Right,
+  None,
 }
 
 enum HealthState {
@@ -16,6 +17,7 @@ enum HealthState {
 export default class Wizard extends Phaser.Physics.Arcade.Sprite {
   private damageVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   private direction: Direction = Phaser.Math.Between(0, 3);
+  private firing: boolean = false;
   private sinceDamaged: number = 0;
   private speed: number = 50;
   private healthState: HealthState = HealthState.Idle;
@@ -41,7 +43,9 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     this.moveEvent = scene.time.addEvent({
       delay: 2000,
       callback: () => {
-        this.changeDirection();
+        if (!this.firing) {
+          this.changeDirection();
+        }
       },
       loop: true,
     });
@@ -119,10 +123,36 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
       case Direction.Right:
         vectors.x = this.speed;
         break;
+      case Direction.None:
+        vectors.x = 0;
+        vectors.y = 0;
+        break;
     }
     this.setVelocity(
       vectors.x + this.damageVector.x,
       vectors.y + this.damageVector.y
     );
+  }
+
+  canSeePlayer(playerPosition: { x: number; y: number }): boolean {
+    return (
+      Math.abs(playerPosition.x - this.x) <= 1 ||
+      Math.abs(playerPosition.y - this.y) <= 1
+    );
+  }
+
+  update(playerPosition: { x: number; y: number }): void {
+    if (!this.firing && this.canSeePlayer(playerPosition)) {
+      this.throwFireball(playerPosition);
+    }
+    super.update();
+  }
+
+  throwFireball(target: { x: number; y: number }): void {
+    this.direction = Direction.None;
+    this.firing = true;
+    this.scene.time.delayedCall(3000, () => {
+      this.firing = false;
+    });
   }
 }
