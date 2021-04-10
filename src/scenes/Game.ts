@@ -20,11 +20,11 @@ export default class Game extends Phaser.Scene {
     super(SceneKeys.Game);
   }
 
-  preload() {
+  init(): void {
     this.cursors = this.input.keyboard.createCursorKeys();
   }
 
-  create() {
+  create(): void {
     this.scene.run(SceneKeys.GameUI);
     TreasureAnims.createChestAnims(this.anims);
     const map = this.make.tilemap({ key: TextureKeys.Dungeon });
@@ -137,7 +137,7 @@ export default class Game extends Phaser.Scene {
     });
   }
 
-  update(t: number, dt: number) {
+  update(t: number, dt: number): void {
     this.player.update(this.cursors);
     if (this.player.dead) {
       if (this.playerLizardsCollider?.world) {
@@ -153,14 +153,14 @@ export default class Game extends Phaser.Scene {
 const handlePlayerChestCollision = (
   player: Phaser.GameObjects.GameObject,
   chest: Phaser.GameObjects.GameObject
-) => (player as Player).collideWithChest(chest as Chest);
+): void => (player as Player).collideWithChest(chest as Chest);
 
 const handleKnifeWallCollision = (
   knife: Phaser.GameObjects.GameObject,
   _: Phaser.GameObjects.GameObject
-) => disableImage(knife as Phaser.Physics.Arcade.Image);
+): void => disableImage(knife as Phaser.Physics.Arcade.Image);
 
-const disableImage = (image: Phaser.Physics.Arcade.Image) => {
+const disableImage = (image: Phaser.Physics.Arcade.Image): void => {
   image.setActive(false);
   image.setVisible(false);
   const body = image.body as Phaser.Physics.Arcade.Body;
@@ -176,7 +176,7 @@ const handlePlayerSpriteCollision = (
 const handleKnifeLizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
   _lizard: Phaser.GameObjects.GameObject
-) => {
+): void => {
   (_lizard as Lizard).destroy();
   disableImage(_knife as Phaser.Physics.Arcade.Image);
 };
@@ -184,7 +184,7 @@ const handleKnifeLizardCollision = (
 const handleKnifeWizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
   _wizard: Phaser.GameObjects.GameObject
-) => {
+): void => {
   (_wizard as Wizard).handleDamage(_knife as Phaser.Physics.Arcade.Sprite, 1);
   disableImage(_knife as Phaser.Physics.Arcade.Image);
 };

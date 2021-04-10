@@ -126,7 +126,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.handleDamage(sprite);
   }
 
-  preUpdate(t: number, dt: number) {
+  preUpdate(t: number, dt: number): void {
     super.preUpdate(t, dt);
     switch (this.healthState) {
       case HealthState.Idle:
@@ -302,7 +302,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private idle() {
+  private idle(): void {
     switch (this.anims.currentAnim.key) {
       case AnimationKeys.PlayerRunDown:
         this.anims.play(AnimationKeys.PlayerIdleDown, true);
@@ -317,12 +317,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocity(0, 0);
   }
 
-  private moveNorth() {
+  private moveNorth(): void {
     this.move({ x: 0, y: -this.speed });
     this.aimAt({ x: this.x, y: this.y - 10 });
   }
 
-  private moveNorthEast() {
+  private moveNorthEast(): void {
     this.move({
       x: this.speed / 2,
       y: -this.speed / 2,
@@ -330,12 +330,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.aimAt({ x: this.x + 5, y: this.y - 5 });
   }
 
-  private moveEast() {
+  private moveEast(): void {
     this.move({ x: this.speed, y: 0 });
     this.aimAt({ x: this.x + 10, y: this.y });
   }
 
-  private moveSouthEast() {
+  private moveSouthEast(): void {
     this.move({
       x: this.speed / 2,
       y: this.speed / 2,
@@ -343,12 +343,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.aimAt({ x: this.x + 5, y: this.y + 5 });
   }
 
-  private moveSouth() {
+  private moveSouth(): void {
     this.move({ x: 0, y: this.speed });
     this.aimAt({ x: this.x, y: this.y + 10 });
   }
 
-  private moveSouthWest() {
+  private moveSouthWest(): void {
     this.move({
       x: -this.speed / 2,
       y: this.speed / 2,
@@ -356,12 +356,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.aimAt({ x: this.x - 5, y: this.y + 5 });
   }
 
-  private moveWest() {
+  private moveWest(): void {
     this.move({ x: -this.speed, y: 0 });
     this.aimAt({ x: this.x - 10, y: this.y });
   }
 
-  private moveNorthWest() {
+  private moveNorthWest(): void {
     this.move({
       x: -this.speed / 2,
       y: -this.speed / 2,
@@ -369,26 +369,26 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.aimAt({ x: this.x - 5, y: this.y - 5 });
   }
 
-  private move(velocity: { x: number; y: number }) {
+  private move(velocity: { x: number; y: number }): void {
     this.setVelocity(velocity.x, velocity.y);
     this.activeChest = undefined;
   }
 
-  private faceUp() {
+  private faceUp(): void {
     this.anims.play(AnimationKeys.PlayerRunUp, true);
   }
 
-  private faceDown() {
+  private faceDown(): void {
     this.anims.play(AnimationKeys.PlayerRunDown, true);
   }
 
-  private faceLeft() {
+  private faceLeft(): void {
     this.anims.play(AnimationKeys.PlayerRunSide, true);
     this.scaleX = -1;
     this.body.offset.x = 24;
   }
 
-  private faceRight() {
+  private faceRight(): void {
     this.anims.play(AnimationKeys.PlayerRunSide, true);
     this.scaleX = 1;
     this.body.offset.x = 8;
@@ -516,7 +516,7 @@ const injurePlayer = (
   player.setTint(0xff0000);
 };
 
-const killPlayer = (player: Player) => {
+const killPlayer = (player: Player): void => {
   player.play(AnimationKeys.PlayerFaint);
   player.setVelocity(0, 0);
 };

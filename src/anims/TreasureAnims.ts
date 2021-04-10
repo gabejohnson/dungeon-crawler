@@ -2,7 +2,9 @@ import type Phaser from "phaser";
 import AnimationKeys from "~/consts/AnimationKeys";
 import TextureKeys from "~/consts/TextureKeys";
 
-export const createChestAnims = (anims: Phaser.Animations.AnimationManager) => {
+export const createChestAnims = (
+  anims: Phaser.Animations.AnimationManager
+): void => {
   anims.create({
     key: AnimationKeys.ChestOpen,
     frames: anims.generateFrameNames(TextureKeys.Treasure, {

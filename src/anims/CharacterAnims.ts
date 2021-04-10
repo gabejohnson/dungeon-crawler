@@ -4,7 +4,7 @@ import TextureKeys from "~/consts/TextureKeys";
 
 export const createCharacterAnims = (
   anims: Phaser.Animations.AnimationManager
-) => {
+): void => {
   anims.create({
     key: AnimationKeys.PlayerIdleDown,
     frames: [{ key: TextureKeys.Player, frame: "walk-down-3.png" }],

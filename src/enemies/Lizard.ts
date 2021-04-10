@@ -39,7 +39,7 @@ export default class Lizard extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  destroy(fromScene?: boolean) {
+  destroy(fromScene?: boolean): void {
     this.moveEvent.destroy();
     super.destroy();
   }
@@ -47,14 +47,14 @@ export default class Lizard extends Phaser.Physics.Arcade.Sprite {
   private handleTileCollision(
     go: Phaser.GameObjects.GameObject,
     tile: Phaser.Tilemaps.Tile
-  ) {
+  ): void {
     if (go != this) {
       return;
     }
     this.direction = Phaser.Math.Between(0, 3);
   }
 
-  preUpdate(t: number, dt: number) {
+  preUpdate(t: number, dt: number): void {
     super.preUpdate(t, dt);
     const vectors = { x: 0, y: 0 };
     switch (this.direction) {

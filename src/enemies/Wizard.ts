@@ -51,7 +51,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     return this.hitpoints <= 0;
   }
 
-  handleDamage(weapon: Phaser.Physics.Arcade.Sprite, damage: number) {
+  handleDamage(weapon: Phaser.Physics.Arcade.Sprite, damage: number): void {
     if (this.healthState === HealthState.Idle) {
       this.hitpoints -= damage;
       if (this.dead) {
@@ -77,14 +77,14 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
   private handleTileCollision(
     go: Phaser.GameObjects.GameObject,
     tile: Phaser.Tilemaps.Tile
-  ) {
+  ): void {
     if (go != this) {
       return;
     }
     this.direction = Phaser.Math.Between(0, 3);
   }
 
-  preUpdate(t: number, dt: number) {
+  preUpdate(t: number, dt: number): void {
     super.preUpdate(t, dt);
     switch (this.healthState) {
       case HealthState.Idle:

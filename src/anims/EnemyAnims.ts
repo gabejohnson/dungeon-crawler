@@ -4,7 +4,7 @@ import TextureKeys from "~/consts/TextureKeys";
 
 export const createLizardAnims = (
   anims: Phaser.Animations.AnimationManager
-) => {
+): void => {
   anims.create({
     key: AnimationKeys.LizardIdle,
     frames: anims.generateFrameNames(TextureKeys.Lizard, {
@@ -32,7 +32,7 @@ export const createLizardAnims = (
 
 export const createWizardAnims = (
   anims: Phaser.Animations.AnimationManager
-) => {
+): void => {
   anims.create({
     key: AnimationKeys.WizardIdle,
     frames: anims.generateFrameNames(TextureKeys.Wizard, {
