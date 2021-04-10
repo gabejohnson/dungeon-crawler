@@ -143,7 +143,13 @@ export default class Game extends Phaser.Scene {
     );
     this.physics.add.collider(knives, wallsLayer, handleKnifeWallCollision);
     this.physics.add.collider(knives, lizards, handleKnifeLizardCollision);
-    this.physics.add.collider(knives, wizards, handleKnifeWizardCollision);
+    this.physics.add.collider(
+      fireballs,
+      wallsLayer,
+      this.handleFireballCollision,
+      undefined,
+      this
+    );
     this.cameras.main.startFollow(this.player, true);
 
     this.input.on(
@@ -181,7 +187,8 @@ export default class Game extends Phaser.Scene {
     this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) => {
       (wizard as Wizard).update(this.player);
     });
-    }
+  }
+
   handleWizardFireballThrown(eventData: {
     fireball: Phaser.GameObjects.GameObject;
   }) {
@@ -196,6 +203,16 @@ export default class Game extends Phaser.Scene {
       })
     );
   }
+
+  handleFireballCollision(
+    fireball: Phaser.GameObjects.GameObject,
+    _: Phaser.GameObjects.GameObject
+  ): void {
+    const emitter = this.wizardWeapons.get(fireball);
+    emitter?.explode(20, fireball.body.position.x, fireball.body.position.y);
+    this.time.delayedCall(1000, () => emitter?.remove());
+    this.wizardWeapons.delete(fireball);
+    disableImage(fireball as Phaser.Physics.Arcade.Image);
   }
 }
 
