@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import AnimationKeys from "~/consts/AnimationKeys";
 import TextureKeys from "~/consts/TextureKeys";
+import * as Utils from "~/utils/common";
 
 enum Direction {
   Up,
@@ -33,7 +34,9 @@ export default class Lizard extends Phaser.Physics.Arcade.Sprite {
     this.moveEvent = scene.time.addEvent({
       delay: 2000,
       callback: () => {
-        this.direction = Phaser.Math.Between(0, 3);
+        if (this.onCamera()) {
+          this.direction = Phaser.Math.Between(0, 3);
+        }
       },
       loop: true,
     });
@@ -54,23 +57,29 @@ export default class Lizard extends Phaser.Physics.Arcade.Sprite {
     this.direction = Phaser.Math.Between(0, 3);
   }
 
+  onCamera(): boolean {
+    return Utils.onCamera(this.scene.cameras.main, this);
+  }
+
   preUpdate(t: number, dt: number): void {
-    super.preUpdate(t, dt);
-    const vectors = { x: 0, y: 0 };
-    switch (this.direction) {
-      case Direction.Up:
-        vectors.y = -this.speed;
-        break;
-      case Direction.Down:
-        vectors.y = this.speed;
-        break;
-      case Direction.Left:
-        vectors.x = -this.speed;
-        break;
-      case Direction.Right:
-        vectors.x = this.speed;
-        break;
+    if (this.onCamera()) {
+      super.preUpdate(t, dt);
+      const vectors = { x: 0, y: 0 };
+      switch (this.direction) {
+        case Direction.Up:
+          vectors.y = -this.speed;
+          break;
+        case Direction.Down:
+          vectors.y = this.speed;
+          break;
+        case Direction.Left:
+          vectors.x = -this.speed;
+          break;
+        case Direction.Right:
+          vectors.x = this.speed;
+          break;
+      }
+      this.setVelocity(vectors.x, vectors.y);
     }
-    this.setVelocity(vectors.x, vectors.y);
   }
 }

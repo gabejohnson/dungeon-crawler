@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import * as EventCenter from "~/events/EventCenter";
 import AnimationKeys from "~/consts/AnimationKeys";
 import Events from "~/consts/Events";
+import * as Utils from "~/utils/common";
 
 enum Direction {
   Up,
@@ -47,7 +48,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     this.moveEvent = scene.time.addEvent({
       delay: 2000,
       callback: () => {
-        if (!this.firing) {
+        if (!this.firing && this.onCamera()) {
           this.changeDirection();
         }
       },
@@ -96,44 +97,46 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
   }
 
   preUpdate(t: number, dt: number): void {
-    super.preUpdate(t, dt);
-    switch (this.healthState) {
-      case HealthState.Idle:
-        break;
-      case HealthState.Damage:
-        this.sinceDamaged += dt;
-        if (this.sinceDamaged > 250) {
-          this.healthState = HealthState.Idle;
-          this.setTint(0xffffff);
-          this.sinceDamaged = 0;
-          this.damageVector.reset();
-        }
-        break;
-    }
+    if (this.onCamera()) {
+      super.preUpdate(t, dt);
+      switch (this.healthState) {
+        case HealthState.Idle:
+          break;
+        case HealthState.Damage:
+          this.sinceDamaged += dt;
+          if (this.sinceDamaged > 250) {
+            this.healthState = HealthState.Idle;
+            this.setTint(0xffffff);
+            this.sinceDamaged = 0;
+            this.damageVector.reset();
+          }
+          break;
+      }
 
-    const vectors = { x: 0, y: 0 };
-    switch (this.direction) {
-      case Direction.Up:
-        vectors.y = -this.speed;
-        break;
-      case Direction.Down:
-        vectors.y = this.speed;
-        break;
-      case Direction.Left:
-        vectors.x = -this.speed;
-        break;
-      case Direction.Right:
-        vectors.x = this.speed;
-        break;
-      case Direction.None:
-        vectors.x = 0;
-        vectors.y = 0;
-        break;
+      const vectors = { x: 0, y: 0 };
+      switch (this.direction) {
+        case Direction.Up:
+          vectors.y = -this.speed;
+          break;
+        case Direction.Down:
+          vectors.y = this.speed;
+          break;
+        case Direction.Left:
+          vectors.x = -this.speed;
+          break;
+        case Direction.Right:
+          vectors.x = this.speed;
+          break;
+        case Direction.None:
+          vectors.x = 0;
+          vectors.y = 0;
+          break;
+      }
+      this.setVelocity(
+        vectors.x + this.damageVector.x,
+        vectors.y + this.damageVector.y
+      );
     }
-    this.setVelocity(
-      vectors.x + this.damageVector.x,
-      vectors.y + this.damageVector.y
-    );
   }
 
   setFireballs(fireballs: Phaser.Physics.Arcade.Group): void {
@@ -148,11 +151,17 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
+  onCamera(): boolean {
+    return Utils.onCamera(this.scene.cameras.main, this);
+  }
+
   update(playerPosition: { x: number; y: number }): void {
-    if (!this.firing && this.canSeePlayer(playerPosition)) {
-      this.throwFireball(playerPosition);
+    if (this.onCamera()) {
+      if (!this.firing && this.canSeePlayer(playerPosition)) {
+        this.throwFireball(playerPosition);
+      }
+      super.update();
     }
-    super.update();
   }
 
   throwFireball(target: { x: number; y: number }): void {
