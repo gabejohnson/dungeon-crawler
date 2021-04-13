@@ -82,31 +82,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(cursors: Phaser.Types.Input.Keyboard.CursorKeys): void {
-    if (cursors == null) return;
-
-    if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-      if (this.activeChest && !this.activeChest.isOpen) {
-        this._coins += this.activeChest.open();
-        EventCenter.sceneEvents.emit(Events.PlayerCoinsChanged, this._coins);
-      } else {
-        throwKnife(this);
+    if (cursors != null && !isDead(this)) {
+      if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
+        if (this.activeChest && !this.activeChest.isOpen) {
+          this._coins += this.activeChest.open();
+          EventCenter.sceneEvents.emit(Events.PlayerCoinsChanged, this._coins);
+        } else {
+          throwKnife(this);
+        }
       }
-    }
 
-    if (
-      this.healthState !== HealthState.Damage &&
-      this.healthState !== HealthState.Dead
-    ) {
-      this.direction = getDirection(cursors, this);
-      facePlayer(this);
-      if (directionalKeyIsDown(cursors)) {
-        // arrow key navigation override
-        this.moveTarget = undefined;
-      }
-      if (this.moveTarget == null) {
-        moveWithKeys(this);
-      } else {
-        moveWithTarget(this);
+      if (
+        this.healthState !== HealthState.Damage &&
+        this.healthState !== HealthState.Dead
+      ) {
+        this.direction = getDirection(cursors, this);
+        facePlayer(this);
+        if (directionalKeyIsDown(cursors)) {
+          // arrow key navigation override
+          this.moveTarget = undefined;
+        }
+        if (this.moveTarget == null) {
+          moveWithKeys(this);
+        } else {
+          moveWithTarget(this);
+        }
       }
     }
   }
