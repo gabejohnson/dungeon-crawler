@@ -7,7 +7,7 @@ import * as EventCenter from "~/events/EventCenter";
 import * as CharacterAnims from "~/anims/CharacterAnims";
 import * as TreasureAnims from "~/anims/TreasureAnims";
 import Lizard from "~/enemies/Lizard";
-import Player from "~/characters/Player";
+import * as Player from "~/characters/Player";
 import "~/characters/Player";
 import Chest from "~/items/Chest";
 import Wizard from "~/enemies/Wizard";
@@ -15,7 +15,7 @@ import Events from "~/consts/events";
 
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private player!: Player;
+  private player!: Player.Player;
   private playerFireballsCollider?: Phaser.Physics.Arcade.Collider;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
@@ -49,7 +49,7 @@ export default class Game extends Phaser.Scene {
 
     CharacterAnims.createCharacterAnims(this.anims);
     this.player = this.add.player(128, 128, TextureKeys.Player);
-    this.player.setKnives(knives);
+    this.player.knives = knives;
 
     const lizards = this.physics.add.group({
       classType: Lizard,
@@ -169,7 +169,7 @@ export default class Game extends Phaser.Scene {
       (
         pointer: Phaser.Input.Pointer,
         _: Array<Phaser.GameObjects.GameObject>
-      ) => this.player.moveTo({ x: pointer.worldX, y: pointer.worldY })
+      ) => Player.moveTo({ x: pointer.worldX, y: pointer.worldY }, this.player)
     );
 
     this.input.on(
@@ -177,7 +177,7 @@ export default class Game extends Phaser.Scene {
       (
         pointer: Phaser.Input.Pointer,
         _: Array<Phaser.GameObjects.GameObject>
-      ) => this.player.aimAt({ x: pointer.worldX, y: pointer.worldY })
+      ) => Player.aimAt({ x: pointer.worldX, y: pointer.worldY }, this.player)
     );
 
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -188,7 +188,7 @@ export default class Game extends Phaser.Scene {
 
   update(t: number, dt: number): void {
     this.player.update(this.cursors);
-    if (this.player.dead) {
+    if (Player.isDead(this.player)) {
       if (this.playerLizardsCollider?.world) {
         this.playerLizardsCollider?.destroy();
       }
@@ -243,7 +243,7 @@ export default class Game extends Phaser.Scene {
 const handlePlayerChestCollision = (
   player: Phaser.GameObjects.GameObject,
   chest: Phaser.GameObjects.GameObject
-): void => (player as Player).collideWithChest(chest as Chest);
+): void => Player.collideWithChest(chest as Chest, player as Player.Player);
 
 const handleKnifeWallCollision = (
   knife: Phaser.GameObjects.GameObject,
@@ -262,7 +262,7 @@ const handlePlayerWeaponCollision = (damage: number) => (
   weapon: Phaser.GameObjects.GameObject
 ): void => {
   const { x, y } = (weapon as unknown) as { x: number; y: number };
-  (player as Player).collideWithWeapon({ damage, x, y });
+  Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
 };
 
 const handleKnifeLizardCollision = (
