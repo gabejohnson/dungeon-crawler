@@ -1,0 +1,28 @@
+{"frames": {
+
+"doors_frame_left.png":
+{
+	"frame": {"x":0,"y":0,"w":16,"h":32},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":32},
+	"sourceSize": {"w":16,"h":32}
+},
+"doors_frame_righ.png":
+{
+	"frame": {"x":0,"y":32,"w":16,"h":32},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":32},
+	"sourceSize": {"w":16,"h":32}
+}},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "door_frames.png",
+	"format": "RGBA8888",
+	"size": {"w":16,"h":64},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:a265e53b77cc43f1bb328ab8e8b23991:859bde63e40f3ee559cac99647824ab2:82289d3fca67e6ccd24146a778e1ff7d$"
+}
+}
