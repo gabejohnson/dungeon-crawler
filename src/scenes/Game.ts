@@ -39,6 +39,9 @@ export default class Game extends Phaser.Scene {
     TreasureAnims.createChestAnims(this.anims);
     const map = this.make.tilemap({ key: TextureKeys.Dungeon });
     const tileset = map.addTilesetImage(TextureKeys.Dungeon, TextureKeys.Tiles);
+    const startingRoom = "Level 1";
+    const roomCenter = findRoomCenter(map, startingRoom);
+    this.cameras.main.centerOn(...roomCenter);
 
     const groundTileset = map.addTilesetImage(TextureKeys.Ground);
 
@@ -56,7 +59,7 @@ export default class Game extends Phaser.Scene {
       .setCollisionByProperty({ collides: true });
 
     CharacterAnims.createCharacterAnims(this.anims);
-    this.player = this.add.player(128, 128, TextureKeys.Player);
+    this.player = this.add.player(...roomCenter, TextureKeys.Player);
     this.player.knives = knives;
 
     const lizards = this.physics.add.group({
@@ -166,7 +169,6 @@ export default class Game extends Phaser.Scene {
       undefined,
       this
     );
-    this.cameras.main.startFollow(this.player, true);
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
@@ -243,6 +245,14 @@ export default class Game extends Phaser.Scene {
     handlePlayerWeaponCollision(1)(player, fireball);
   }
 }
+
+const findRoomCenter = (
+  map: Phaser.Tilemaps.Tilemap,
+  room: string
+): [number, number] => {
+  const metadata = map.findObject("Metadata", ({ name }) => name === room);
+  return [metadata?.x ?? 0, metadata?.y ?? 0];
+};
 
 const handlePlayerChestCollision = (
   player: Phaser.GameObjects.GameObject,
