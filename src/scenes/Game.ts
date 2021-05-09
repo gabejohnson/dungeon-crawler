@@ -3,6 +3,7 @@ import SceneKeys from "~/consts/SceneKeys";
 import TextureKeys from "~/consts/TextureKeys";
 import * as Debug from "~/utils/debug";
 import * as EnemyAnims from "~/anims/EnemyAnims";
+import * as EnvironmentAnims from "~/anims/EnvironmentAnims";
 import * as EventCenter from "~/events/EventCenter";
 import * as CharacterAnims from "~/anims/CharacterAnims";
 import * as TreasureAnims from "~/anims/TreasureAnims";
@@ -12,9 +13,11 @@ import "~/characters/Player";
 import Chest from "~/items/Chest";
 import Wizard from "~/enemies/Wizard";
 import Events from "~/consts/events";
+import Door from "~/environment/Door";
 
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private doors!: Phaser.Physics.Arcade.Group;
   private player!: Player.Player;
   private playerFireballsCollider?: Phaser.Physics.Arcade.Collider;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
@@ -38,7 +41,6 @@ export default class Game extends Phaser.Scene {
     this.scene.run(SceneKeys.GameUI);
     TreasureAnims.createChestAnims(this.anims);
     const map = this.make.tilemap({ key: TextureKeys.Dungeon });
-    const tileset = map.addTilesetImage(TextureKeys.Dungeon, TextureKeys.Tiles);
     const startingRoom = "Level 1";
     const roomCenter = findRoomCenter(map, startingRoom);
     this.cameras.main.centerOn(...roomCenter);
@@ -57,6 +59,26 @@ export default class Game extends Phaser.Scene {
     const wallsLayer = map
       .createLayer("Walls", [wallsTileset, doorFrameTileset])
       .setCollisionByProperty({ collides: true });
+
+    this.doors = this.physics.add.group({
+      classType: Door,
+    });
+
+    EnvironmentAnims.createDoorAnims(this.anims);
+    const doorsLayer = map.getObjectLayer("Doors");
+    doorsLayer?.objects.forEach(_door => {
+      // TODO: we should abstract away calculating the coordinates
+      const door = this.doors.get(
+        _door.x! + _door.width! * 0.5,
+        _door.y! - _door.height! * 0.5,
+        TextureKeys.Doors
+      ) as Door;
+      door.setPushable(false);
+      const destination = _door?.properties?.find(
+        (property: { name: string }) => property.name === "destination"
+      );
+      door.setData("destination", destination.value);
+    });
 
     CharacterAnims.createCharacterAnims(this.anims);
     this.player = this.add.player(...roomCenter, TextureKeys.Player);

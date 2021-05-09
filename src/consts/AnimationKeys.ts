@@ -1,6 +1,8 @@
 enum AnimationKeys {
   ChestClosed = "chest-closed",
   ChestOpen = "chest-open",
+  DoorClosed = "door-closed",
+  DoorOpen = "door-open",
   LizardIdle = "lizard-idle",
   LizardRun = "lizard-run",
   PlayerFaint = "player-faint",
