@@ -1,5 +1,8 @@
 enum TextureKeys {
+  Doors = "doors",
+  DoorFrames = "door_frames",
   Dungeon = "dungeon",
+  Ground = "ground",
   Knife = "knife",
   Lizard = "lizard",
   Player = "player",
@@ -9,6 +12,7 @@ enum TextureKeys {
   UIHeartEmpty = "ui-heart-empty",
   UIHeartFull = "ui-heart-full",
   UIHeartHalf = "ui-heart-half",
+  Walls = "walls",
   Wizard = "wizard",
 }
 

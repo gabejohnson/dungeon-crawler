@@ -40,12 +40,20 @@ export default class Game extends Phaser.Scene {
     const map = this.make.tilemap({ key: TextureKeys.Dungeon });
     const tileset = map.addTilesetImage(TextureKeys.Dungeon, TextureKeys.Tiles);
 
-    map.createLayer("Ground", tileset);
+    const groundTileset = map.addTilesetImage(TextureKeys.Ground);
+
+    map.createLayer("Ground", groundTileset);
 
     const knives = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Image,
-      maxSize: 3,
     });
+
+    const wallsTileset = map.addTilesetImage(TextureKeys.Walls);
+    const doorFrameTileset = map.addTilesetImage(TextureKeys.DoorFrames);
+
+    const wallsLayer = map
+      .createLayer("Walls", [wallsTileset, doorFrameTileset])
+      .setCollisionByProperty({ collides: true });
 
     CharacterAnims.createCharacterAnims(this.anims);
     this.player = this.add.player(128, 128, TextureKeys.Player);
@@ -105,10 +113,6 @@ export default class Game extends Phaser.Scene {
         this
       );
     });
-
-    const wallsLayer = map
-      .createLayer("Walls", tileset)
-      .setCollisionByProperty({ collides: true });
 
     this.wizards.children.each((_wizard: Phaser.GameObjects.GameObject) => {
       const wizard = _wizard as Wizard;

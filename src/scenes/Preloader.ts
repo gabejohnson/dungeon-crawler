@@ -8,8 +8,11 @@ export default class Preloader extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image(TextureKeys.Tiles, "tiles/dungeon_tiles.png");
-    this.load.tilemapTiledJSON(TextureKeys.Dungeon, "tiles/dungeon-01.json");
+    this.load.image(TextureKeys.Ground, "ground/ground.png");
+    this.load.image(TextureKeys.Walls, "walls/walls.png");
+    this.load.image(TextureKeys.DoorFrames, "doors/door_frames.png");
+    this.load.tilemapTiledJSON(TextureKeys.Dungeon, "levels/dungeon-02.json");
+    this.load.atlas(TextureKeys.Doors, "doors/doors.png", "doors/doors.json");
     this.load.atlas(
       TextureKeys.Player,
       "characters/player.png",
