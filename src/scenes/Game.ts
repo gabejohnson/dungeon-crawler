@@ -235,6 +235,21 @@ export default class Game extends Phaser.Scene {
     });
   }
 
+  enterRoom(room: string) {
+    const roomCenter = findRoomCenter(this.map, room);
+    this.cameras.main.pan(
+      ...roomCenter,
+      1000,
+      Phaser.Math.Easing.Linear,
+      true,
+      (camera, progress, x, y) => {
+        if (progress === 1) {
+          camera.centerOn(...roomCenter);
+        }
+      }
+    );
+  }
+
   update(t: number, dt: number): void {
     this.player.update(this.cursors);
     if (Player.isDead(this.player)) {
@@ -254,6 +269,11 @@ export default class Game extends Phaser.Scene {
     });
 
     if (this.doorOverlapData && t > this.doorOverlapData.time + dt) {
+      if (
+        this.doorOverlapData.direction === this.doorOverlapData.directionEntered
+      ) {
+        this.enterRoom(this.doorOverlapData.door.getData("destination"));
+      }
       this.doorOverlapData = undefined;
     }
   }
