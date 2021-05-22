@@ -18,12 +18,20 @@ import Door from "~/environment/Door";
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private doors!: Phaser.Physics.Arcade.Group;
+  private map!: Phaser.Tilemaps.Tilemap;
   private player!: Player.Player;
   private playerFireballsCollider?: Phaser.Physics.Arcade.Collider;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
   private sparkles!: Phaser.GameObjects.Particles.ParticleEmitterManager;
   private wizards!: Phaser.Physics.Arcade.Group;
+  private doorOverlapData?: {
+    direction: Player.Direction;
+    door: Door;
+    directionEntered: Player.Direction;
+    time: number;
+  };
+
   private wizardWeapons: WeakMap<
     Phaser.GameObjects.GameObject,
     Phaser.GameObjects.Particles.ParticleEmitter
@@ -40,7 +48,7 @@ export default class Game extends Phaser.Scene {
   create(): void {
     this.scene.run(SceneKeys.GameUI);
     TreasureAnims.createChestAnims(this.anims);
-    const map = this.make.tilemap({ key: TextureKeys.Dungeon });
+    const map = (this.map = this.make.tilemap({ key: TextureKeys.Dungeon }));
     const startingRoom = "Level 1";
     const roomCenter = findRoomCenter(map, startingRoom);
     this.cameras.main.centerOn(...roomCenter);
@@ -165,6 +173,13 @@ export default class Game extends Phaser.Scene {
       handlePlayerDoorCollision,
       processPlayerDoorCollision
     );
+    this.physics.add.overlap(
+      this.player,
+      this.doors,
+      this.handlePlayerDoorOverlap,
+      processPlayerDoorOverlap,
+      this
+    );
     this.physics.add.collider(this.player, chests, handlePlayerChestCollision);
     this.physics.add.collider(lizards, wallsLayer);
     this.physics.add.collider(lizards, chests);
@@ -237,6 +252,29 @@ export default class Game extends Phaser.Scene {
     this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) => {
       (wizard as Wizard).update(this.player);
     });
+
+    if (this.doorOverlapData && t > this.doorOverlapData.time + dt) {
+      this.doorOverlapData = undefined;
+    }
+  }
+
+  handlePlayerDoorOverlap(
+    player: Phaser.GameObjects.GameObject,
+    _door: Phaser.GameObjects.GameObject
+  ): void {
+    const door = _door as Door;
+    const direction = (player as Player.Player).direction;
+    if (!this.doorOverlapData) {
+      this.doorOverlapData = {
+        direction,
+        directionEntered: direction,
+        door,
+        time: this.time.now,
+      };
+    } else {
+      this.doorOverlapData.time = this.time.now;
+      this.doorOverlapData.direction = direction;
+    }
   }
 
   handleWizardFireballThrown(eventData: {
@@ -296,6 +334,11 @@ const processPlayerDoorCollision = (
   player: Phaser.GameObjects.GameObject,
   door: Phaser.GameObjects.GameObject
 ): boolean => !(door as Door).isOpen;
+
+const processPlayerDoorOverlap = (
+  player: Phaser.GameObjects.GameObject,
+  door: Phaser.GameObjects.GameObject
+): boolean => (door as Door).isOpen;
 
 const handleKnifeWallCollision = (
   knife: Phaser.GameObjects.GameObject,

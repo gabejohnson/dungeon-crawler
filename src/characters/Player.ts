@@ -25,7 +25,7 @@ enum HealthState {
   Dead,
 }
 
-enum Direction {
+export enum Direction {
   North,
   NorthEast,
   East,
