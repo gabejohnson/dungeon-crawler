@@ -73,8 +73,7 @@ export default class Game extends Phaser.Scene {
     });
 
     EnvironmentAnims.createDoorAnims(this.anims);
-    const doorsLayer = map.getObjectLayer("Doors");
-    doorsLayer?.objects.forEach(_door => {
+    map.getObjectLayer("Doors")?.objects.forEach(_door => {
       // TODO: we should abstract away calculating the coordinates
       const door = this.doors.get(
         _door.x! + _door.width! * 0.5,
@@ -85,7 +84,8 @@ export default class Game extends Phaser.Scene {
       const destination = _door?.properties?.find(
         (property: { name: string }) => property.name === "destination"
       );
-      door.setData("destination", destination.value);
+      if (destination?.value != null)
+        door.setData("destination", destination.value);
     });
 
     CharacterAnims.createCharacterAnims(this.anims);
@@ -100,8 +100,7 @@ export default class Game extends Phaser.Scene {
       },
     });
     EnemyAnims.createLizardAnims(this.anims);
-    const lizardsLayer = map.getObjectLayer("Lizards");
-    lizardsLayer.objects.forEach(lizardObject => {
+    map.getObjectLayer("Lizards")?.objects.forEach(lizardObject => {
       const lizard = lizards.get(
         lizardObject.x! + lizardObject.width! * 0.5,
         lizardObject.y! - lizardObject.height! * 0.5,
@@ -119,8 +118,7 @@ export default class Game extends Phaser.Scene {
       },
     });
     EnemyAnims.createWizardAnims(this.anims);
-    const wizardsLayer = map.getObjectLayer("Wizards");
-    wizardsLayer.objects.forEach(wizardObject => {
+    map.getObjectLayer("Wizards")?.objects.forEach(wizardObject => {
       const wizard = this.wizards.get(
         wizardObject.x! + wizardObject.width! * 0.5,
         wizardObject.y! - wizardObject.height! * 0.5,
@@ -156,7 +154,7 @@ export default class Game extends Phaser.Scene {
     const chests = this.physics.add.staticGroup({
       classType: Chest,
     });
-    map.getObjectLayer("Chests").objects.forEach(chestObject => {
+    map.getObjectLayer("Chests")?.objects.forEach(chestObject => {
       chests.get(
         chestObject.x! + chestObject.width! * 0.5,
         chestObject.y! - chestObject.height! * 0.5,
@@ -372,13 +370,15 @@ const disableImage = (image: Phaser.Physics.Arcade.Image): void => {
   body.setEnable(false);
 };
 
-const handlePlayerWeaponCollision = (damage: number) => (
-  player: Phaser.GameObjects.GameObject,
-  weapon: Phaser.GameObjects.GameObject
-): void => {
-  const { x, y } = (weapon as unknown) as { x: number; y: number };
-  Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
-};
+const handlePlayerWeaponCollision =
+  (damage: number) =>
+  (
+    player: Phaser.GameObjects.GameObject,
+    weapon: Phaser.GameObjects.GameObject
+  ): void => {
+    const { x, y } = weapon as unknown as { x: number; y: number };
+    Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
+  };
 
 const handleKnifeLizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
