@@ -4,6 +4,7 @@ import AnimationKeys from "~/consts/AnimationKeys";
 import TextureKeys from "~/consts/TextureKeys";
 import Chest from "~/items/Chest";
 import Events from "~/consts/events";
+import Door from "~/environment/Door";
 
 declare global {
   namespace Phaser.GameObjects {
@@ -40,6 +41,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private _coins: number = 0;
   health: number = 6;
   activeChest?: Chest;
+  activeDoor?: Door;
   aimTarget: { x: number; y: number } = { x: 0, y: 0 };
   direction: Direction;
   healthState: HealthState = HealthState.Idle;
@@ -87,6 +89,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.activeChest && !this.activeChest.isOpen) {
           this._coins += this.activeChest.open();
           EventCenter.sceneEvents.emit(Events.PlayerCoinsChanged, this._coins);
+        } else if (this.activeDoor && !this.activeDoor.isOpen) {
+          this.activeDoor.open();
         } else {
           throwKnife(this);
         }
@@ -133,6 +137,13 @@ const calculateUnitVector = (
 export const collideWithChest = (chest: Chest, player: Player): void => {
   if (chest !== player.activeChest) {
     player.activeChest = chest;
+    stop(player);
+  }
+};
+
+export const collideWithDoor = (door: Door, player: Player): void => {
+  if (door !== player.activeDoor && !door.isOpen) {
+    player.activeDoor = door;
     stop(player);
   }
 };
@@ -395,6 +406,7 @@ Phaser.GameObjects.GameObjectFactory.register(
 const move = (velocity: { x: number; y: number }, player: Player): void => {
   player.setVelocity(velocity.x, velocity.y);
   player.activeChest = undefined;
+  player.activeDoor = undefined;
 };
 
 const moveEast = (player: Player): void => {

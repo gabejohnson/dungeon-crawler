@@ -159,6 +159,12 @@ export default class Game extends Phaser.Scene {
     // Debug.debugDraw(wallsLayer, this);
 
     this.physics.add.collider(this.player, wallsLayer);
+    this.physics.add.collider(
+      this.player,
+      this.doors,
+      handlePlayerDoorCollision,
+      processPlayerDoorCollision
+    );
     this.physics.add.collider(this.player, chests, handlePlayerChestCollision);
     this.physics.add.collider(lizards, wallsLayer);
     this.physics.add.collider(lizards, chests);
@@ -280,6 +286,16 @@ const handlePlayerChestCollision = (
   player: Phaser.GameObjects.GameObject,
   chest: Phaser.GameObjects.GameObject
 ): void => Player.collideWithChest(chest as Chest, player as Player.Player);
+
+const handlePlayerDoorCollision = (
+  player: Phaser.GameObjects.GameObject,
+  door: Phaser.GameObjects.GameObject
+): void => Player.collideWithDoor(door as Door, player as Player.Player);
+
+const processPlayerDoorCollision = (
+  player: Phaser.GameObjects.GameObject,
+  door: Phaser.GameObjects.GameObject
+): boolean => !(door as Door).isOpen;
 
 const handleKnifeWallCollision = (
   knife: Phaser.GameObjects.GameObject,
