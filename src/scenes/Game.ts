@@ -1,3 +1,4 @@
+import Door from "~/environment/Door";
 import Phaser from "phaser";
 import SceneKeys from "~/consts/SceneKeys";
 import TextureKeys from "~/consts/TextureKeys";
@@ -371,13 +372,13 @@ const disableImage = (image: Phaser.Physics.Arcade.Image): void => {
 
 const handlePlayerWeaponCollision =
   (damage: number) =>
-  (
-    player: Phaser.GameObjects.GameObject,
-    weapon: Phaser.GameObjects.GameObject
-  ): void => {
-    const { x, y } = weapon as unknown as { x: number; y: number };
-    Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
-  };
+    (
+      player: Phaser.GameObjects.GameObject,
+      weapon: Phaser.GameObjects.GameObject
+    ): void => {
+      const { x, y } = weapon as unknown as { x: number; y: number };
+      Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
+    };
 
 const handleKnifeLizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
