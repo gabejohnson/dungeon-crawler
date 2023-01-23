@@ -1,6 +1,5 @@
-import Door from "~/environment/Door";
-import Phaser from "phaser";
 import SceneKeys from "~/consts/SceneKeys";
+import Phaser from "phaser";
 import TextureKeys from "~/consts/TextureKeys";
 import * as Debug from "~/utils/debug";
 import * as EnemyAnims from "~/anims/EnemyAnims";
@@ -14,8 +13,16 @@ import "~/characters/Player";
 import Chest from "~/items/Chest";
 import Wizard from "~/enemies/Wizard";
 import Events from "~/consts/Events";
+import * as Door from "~/environment/Door";
+
+type Room = [number, number];
 
 export default class Game extends Phaser.Scene {
+  private currentRoom?: string;
+  private mapObjects: {
+    doors: { [key: string]: Door.Door };
+    rooms: { [key: string]: Room };
+  } = { doors: {}, rooms: {} };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private doors!: Phaser.Physics.Arcade.Group;
   private map!: Phaser.Tilemaps.Tilemap;
@@ -25,12 +32,6 @@ export default class Game extends Phaser.Scene {
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
   private sparkles!: Phaser.GameObjects.Particles.ParticleEmitterManager;
   private wizards!: Phaser.Physics.Arcade.Group;
-  private doorOverlapData?: {
-    direction: Player.Direction;
-    door: Door;
-    directionEntered: Player.Direction;
-    time: number;
-  };
 
   private wizardWeapons: WeakMap<
     Phaser.GameObjects.GameObject,
@@ -49,9 +50,14 @@ export default class Game extends Phaser.Scene {
     this.scene.run(SceneKeys.GameUI);
     TreasureAnims.createChestAnims(this.anims);
     const map = (this.map = this.make.tilemap({ key: TextureKeys.Dungeon }));
-    const startingRoom = "Level 1";
-    const roomCenter = findRoomCenter(map, startingRoom);
-    this.cameras.main.centerOn(...roomCenter);
+
+    map.getObjectLayer("Metadata")?.objects.forEach(room => {
+      this.mapObjects.rooms[room.name] = [room.x ?? 0, room.y ?? 0];
+    });
+
+    this.currentRoom = "Level 1";
+    const room = this.mapObjects.rooms[this.currentRoom];
+    this.cameras.main.centerOn(...room);
 
     const groundTileset = map.addTilesetImage(TextureKeys.Ground);
 
@@ -69,7 +75,7 @@ export default class Game extends Phaser.Scene {
       .setCollisionByProperty({ collides: true });
 
     this.doors = this.physics.add.group({
-      classType: Door,
+      classType: Door.Door,
     });
 
     EnvironmentAnims.createDoorAnims(this.anims);
@@ -79,17 +85,24 @@ export default class Game extends Phaser.Scene {
         _door.x! + _door.width! * 0.5,
         _door.y! - _door.height! * 0.5,
         TextureKeys.Doors
-      ) as Door;
+      ) as Door.Door;
       door.setPushable(false);
-      const destination = _door?.properties?.find(
-        (property: { name: string }) => property.name === "destination"
+      const doorData: { destination: string; room: string } =
+        _door?.properties?.reduce(
+          (
+            acc: { [key: string]: unknown },
+            property: { name: string; value: unknown }
+          ) => ((acc[property.name] = property.value), acc),
+          {}
       );
-      if (destination?.value != null)
-        door.setData("destination", destination.value);
+      door.setDestination(doorData.destination);
+      door.setRoom(doorData.room);
+      door.setDirection(getDoorDirection(_door));
+      this.mapObjects.doors[_door.name] = door;
     });
 
     CharacterAnims.createCharacterAnims(this.anims);
-    this.player = this.add.player(...roomCenter, TextureKeys.Player);
+    this.player = this.add.player(...room, TextureKeys.Player);
     this.player.knives = knives;
 
     const lizards = this.physics.add.group({
@@ -130,6 +143,8 @@ export default class Game extends Phaser.Scene {
 
     const fireballs = this.physics.add.group();
     this.sparkles = this.add.particles(TextureKeys.Sparkle);
+
+    EventCenter.sceneEvents.on(Events.DoorOpened, this.handleDoorOpened, this);
 
     EventCenter.sceneEvents.on(
       Events.WizardFireballThrown,
@@ -228,24 +243,45 @@ export default class Game extends Phaser.Scene {
     );
 
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      EventCenter.sceneEvents.off(
+        Events.DoorOpened,
+        this.handleDoorOpened,
+        this
+      );
+
+      EventCenter.sceneEvents.off(
+        Events.WizardFireballThrown,
+        this.handleWizardFireballThrown,
+        this
+      );
+
       this.events.off(Phaser.Input.Events.POINTER_UP);
       this.events.off(Phaser.Input.Events.POINTER_MOVE);
     });
   }
 
-  enterRoom(room: string) {
-    const roomCenter = findRoomCenter(this.map, room);
+  enterRoom(room: Room) {
     this.cameras.main.pan(
-      ...roomCenter,
+      ...room,
       1000,
       Phaser.Math.Easing.Linear,
       true,
       (camera, progress, x, y) => {
-        if (progress === 1) {
-          camera.centerOn(...roomCenter);
+        if (progress >= 1) {
+          camera.centerOn(...room);
         }
       }
     );
+  }
+
+  getDoor(door: string | undefined): Door.Door | undefined {
+    if (door != null) {
+      return this.mapObjects.doors[door];
+    }
+  }
+
+  getRoom(room: string | undefined): Room {
+    return room != null ? this.mapObjects.rooms[room] : [0, 0];
   }
 
   update(t: number, dt: number): void {
@@ -265,33 +301,29 @@ export default class Game extends Phaser.Scene {
     this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) => {
       (wizard as Wizard).update(this.player);
     });
-
-    if (this.doorOverlapData && t > this.doorOverlapData.time + dt) {
-      if (
-        this.doorOverlapData.direction === this.doorOverlapData.directionEntered
-      ) {
-        this.enterRoom(this.doorOverlapData.door.getData("destination"));
       }
-      this.doorOverlapData = undefined;
-    }
+
+  private handleDoorOpened(door: Door.Door): void {
+    const destinationDoor = this.getDoor(door.destination);
+    door.open();
+    destinationDoor?.open();
   }
 
   handlePlayerDoorOverlap(
     player: Phaser.GameObjects.GameObject,
     _door: Phaser.GameObjects.GameObject
   ): void {
-    const door = _door as Door;
-    const direction = (player as Player.Player).direction;
-    if (!this.doorOverlapData) {
-      this.doorOverlapData = {
-        direction,
-        directionEntered: direction,
-        door,
-        time: this.time.now,
-      };
-    } else {
-      this.doorOverlapData.time = this.time.now;
-      this.doorOverlapData.direction = direction;
+    const door = _door as Door.Door;
+
+    if (
+      door.room !== this.currentRoom &&
+      spriteIsInSprite({
+        innerSprite: player as Player.Player,
+        outerSprite: door,
+      })
+    ) {
+      this.currentRoom = door.room;
+      this.enterRoom(this.getRoom(this.currentRoom));
     }
   }
 
@@ -330,12 +362,14 @@ export default class Game extends Phaser.Scene {
   }
 }
 
-const findRoomCenter = (
-  map: Phaser.Tilemaps.Tilemap,
-  room: string
-): [number, number] => {
-  const metadata = map.findObject("Metadata", ({ name }) => name === room);
-  return [metadata?.x ?? 0, metadata?.y ?? 0];
+const getDoorDirection = (
+  door: Phaser.Types.Tilemaps.TiledObject
+): Door.Direction => {
+  if (door.flippedVertical) {
+    return Door.Direction.South;
+  } else {
+    return Door.Direction.North;
+  }
 };
 
 const handlePlayerChestCollision = (
@@ -346,17 +380,34 @@ const handlePlayerChestCollision = (
 const handlePlayerDoorCollision = (
   player: Phaser.GameObjects.GameObject,
   door: Phaser.GameObjects.GameObject
-): void => Player.collideWithDoor(door as Door, player as Player.Player);
+): void => Player.collideWithDoor(door as Door.Door, player as Player.Player);
+
+const spriteIsInSprite = ({
+  innerSprite,
+  outerSprite,
+}: {
+  innerSprite: Phaser.Physics.Arcade.Sprite;
+  outerSprite: Phaser.Physics.Arcade.Sprite;
+}) => {
+  const outerSpriteBounds = new Phaser.Geom.Rectangle();
+  outerSprite.getBounds(outerSpriteBounds);
+  const innerSpriteBounds = new Phaser.Geom.Rectangle();
+  innerSprite.getBounds(innerSpriteBounds);
+  return outerSpriteBounds.contains(
+    innerSpriteBounds.centerX,
+    innerSpriteBounds.centerY
+  );
+};
 
 const processPlayerDoorCollision = (
   player: Phaser.GameObjects.GameObject,
   door: Phaser.GameObjects.GameObject
-): boolean => !(door as Door).isOpen;
+): boolean => !(door as Door.Door).isOpen;
 
 const processPlayerDoorOverlap = (
   player: Phaser.GameObjects.GameObject,
   door: Phaser.GameObjects.GameObject
-): boolean => (door as Door).isOpen;
+): boolean => (door as Door.Door).isOpen;
 
 const handleKnifeWallCollision = (
   knife: Phaser.GameObjects.GameObject,

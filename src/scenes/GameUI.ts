@@ -29,14 +29,6 @@ export default class GameUI extends Phaser.Scene {
       this
     );
 
-    this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
-      EventCenter.sceneEvents.off(
-        Events.PlayerHealthChanged,
-        this.handlePlayerHealthChanged,
-        this
-      );
-    });
-
     this.coins = this.add.text(12, 20, "0", {
       fontSize: "14",
     });
@@ -48,6 +40,12 @@ export default class GameUI extends Phaser.Scene {
     );
 
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      EventCenter.sceneEvents.off(
+        Events.PlayerHealthChanged,
+        this.handlePlayerHealthChanged,
+        this
+      );
+
       EventCenter.sceneEvents.off(
         Events.PlayerCoinsChanged,
         this.handlePlayerCoinsChanged,

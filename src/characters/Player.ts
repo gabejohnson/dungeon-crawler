@@ -4,7 +4,7 @@ import AnimationKeys from "~/consts/AnimationKeys";
 import TextureKeys from "~/consts/TextureKeys";
 import Chest from "~/items/Chest";
 import Events from "~/consts/Events";
-import Door from "~/environment/Door";
+import * as Door from "~/environment/Door";
 
 declare global {
   namespace Phaser.GameObjects {
@@ -41,7 +41,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private _coins: number = 0;
   health: number = 6;
   activeChest?: Chest;
-  activeDoor?: Door;
+  activeDoor?: Door.Door;
   aimTarget: { x: number; y: number } = { x: 0, y: 0 };
   direction: Direction;
   healthState: HealthState = HealthState.Idle;
@@ -90,7 +90,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this._coins += this.activeChest.open();
           EventCenter.sceneEvents.emit(Events.PlayerCoinsChanged, this._coins);
         } else if (this.activeDoor && !this.activeDoor.isOpen) {
-          this.activeDoor.open();
+          EventCenter.sceneEvents.emit(Events.DoorOpened, this.activeDoor);
         } else {
           throwKnife(this);
         }
@@ -141,7 +141,7 @@ export const collideWithChest = (chest: Chest, player: Player): void => {
   }
 };
 
-export const collideWithDoor = (door: Door, player: Player): void => {
+export const collideWithDoor = (door: Door.Door, player: Player): void => {
   if (door !== player.activeDoor && !door.isOpen) {
     player.activeDoor = door;
     stop(player);
