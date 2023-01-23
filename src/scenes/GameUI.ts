@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import Events from "~/consts/events";
+import Events from "~/consts/Events";
 import SceneKeys from "~/consts/SceneKeys";
 import TextureKeys from "~/consts/TextureKeys";
 import * as EventCenter from "~/events/EventCenter";

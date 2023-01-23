@@ -3,7 +3,7 @@ import * as EventCenter from "~/events/EventCenter";
 import AnimationKeys from "~/consts/AnimationKeys";
 import TextureKeys from "~/consts/TextureKeys";
 import Chest from "~/items/Chest";
-import Events from "~/consts/events";
+import Events from "~/consts/Events";
 import Door from "~/environment/Door";
 
 declare global {

@@ -12,8 +12,7 @@ import * as Player from "~/characters/Player";
 import "~/characters/Player";
 import Chest from "~/items/Chest";
 import Wizard from "~/enemies/Wizard";
-import Events from "~/consts/events";
-import Door from "~/environment/Door";
+import Events from "~/consts/Events";
 
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
