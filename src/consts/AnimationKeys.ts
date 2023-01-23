@@ -1,4 +1,6 @@
 enum AnimationKeys {
+  BigZombieIdle = "big-zombie-idle",
+  BigZombieRun = "big-zombie-run",
   ChestClosed = "chest-closed",
   ChestOpen = "chest-open",
   DoorClosed = "door-closed",

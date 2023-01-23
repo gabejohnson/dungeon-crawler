@@ -1,3 +1,4 @@
+import BigZombie from "~/enemies/BigZombie";
 import SceneKeys from "~/consts/SceneKeys";
 import Phaser from "phaser";
 import TextureKeys from "~/consts/TextureKeys";
@@ -27,6 +28,7 @@ export default class Game extends Phaser.Scene {
   private doors!: Phaser.Physics.Arcade.Group;
   private map!: Phaser.Tilemaps.Tilemap;
   private player!: Player.Player;
+  private playerBigZombiesCollider?: Phaser.Physics.Arcade.Collider;
   private playerFireballsCollider?: Phaser.Physics.Arcade.Collider;
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
@@ -65,6 +67,7 @@ export default class Game extends Phaser.Scene {
 
     const knives = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Image,
+      maxSize: 3,
     });
 
     const wallsTileset = map.addTilesetImage(TextureKeys.Walls);
@@ -94,7 +97,7 @@ export default class Game extends Phaser.Scene {
             property: { name: string; value: unknown }
           ) => ((acc[property.name] = property.value), acc),
           {}
-      );
+        );
       door.setDestination(doorData.destination);
       door.setRoom(doorData.room);
       door.setDirection(getDoorDirection(_door));
@@ -104,6 +107,24 @@ export default class Game extends Phaser.Scene {
     CharacterAnims.createCharacterAnims(this.anims);
     this.player = this.add.player(...room, TextureKeys.Player);
     this.player.knives = knives;
+
+    const bigZombies = this.physics.add.group({
+      classType: BigZombie,
+      createCallback: go => {
+        const bigZombie = go as BigZombie;
+        bigZombie.body.onCollide = true;
+      },
+    });
+    EnemyAnims.createBigZombieAnims(this.anims);
+    map.getObjectLayer("Boss")?.objects.forEach(bigZombieObject => {
+      const bigZombie = bigZombies.get(
+        bigZombieObject.x! + bigZombieObject.width! * 0.5,
+        bigZombieObject.y! - bigZombieObject.height! * 0.5,
+        TextureKeys.BigZombie
+      ) as BigZombie;
+      bigZombie.body.setSize(bigZombie.width * 0.9, bigZombie.height * 0.6);
+      bigZombie.body.offset.y = 10;
+    });
 
     const lizards = this.physics.add.group({
       classType: Lizard,
@@ -152,14 +173,6 @@ export default class Game extends Phaser.Scene {
       this
     );
 
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      EventCenter.sceneEvents.off(
-        Events.WizardFireballThrown,
-        this.handleWizardFireballThrown,
-        this
-      );
-    });
-
     this.wizards.children.each((_wizard: Phaser.GameObjects.GameObject) => {
       const wizard = _wizard as Wizard;
       wizard.setWalls(wallsLayer);
@@ -194,10 +207,18 @@ export default class Game extends Phaser.Scene {
       this
     );
     this.physics.add.collider(this.player, chests, handlePlayerChestCollision);
+    this.physics.add.collider(bigZombies, wallsLayer);
+    this.physics.add.collider(bigZombies, chests);
     this.physics.add.collider(lizards, wallsLayer);
     this.physics.add.collider(lizards, chests);
     this.physics.add.collider(this.wizards, wallsLayer);
     this.physics.add.collider(this.wizards, chests);
+    this.playerBigZombiesCollider = this.physics.add.collider(
+      bigZombies,
+      this.player,
+      handlePlayerWeaponCollision(1)
+    );
+
     this.playerLizardsCollider = this.physics.add.collider(
       lizards,
       this.player,
@@ -216,6 +237,11 @@ export default class Game extends Phaser.Scene {
       this
     );
     this.physics.add.collider(knives, wallsLayer, handleKnifeWallCollision);
+    this.physics.add.collider(
+      knives,
+      bigZombies,
+      handleKnifeBigZombieCollision
+    );
     this.physics.add.collider(knives, lizards, handleKnifeLizardCollision);
     this.physics.add.collider(knives, this.wizards, handleKnifeWizardCollision);
     this.physics.add.collider(
@@ -287,6 +313,9 @@ export default class Game extends Phaser.Scene {
   update(t: number, dt: number): void {
     this.player.update(this.cursors);
     if (Player.isDead(this.player)) {
+      if (this.playerBigZombiesCollider?.world) {
+        this.playerBigZombiesCollider?.destroy();
+      }
       if (this.playerLizardsCollider?.world) {
         this.playerLizardsCollider?.destroy();
       }
@@ -301,7 +330,7 @@ export default class Game extends Phaser.Scene {
     this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) => {
       (wizard as Wizard).update(this.player);
     });
-      }
+  }
 
   private handleDoorOpened(door: Door.Door): void {
     const destinationDoor = this.getDoor(door.destination);
@@ -423,13 +452,24 @@ const disableImage = (image: Phaser.Physics.Arcade.Image): void => {
 
 const handlePlayerWeaponCollision =
   (damage: number) =>
-    (
-      player: Phaser.GameObjects.GameObject,
-      weapon: Phaser.GameObjects.GameObject
-    ): void => {
-      const { x, y } = weapon as unknown as { x: number; y: number };
-      Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
-    };
+  (
+    player: Phaser.GameObjects.GameObject,
+    weapon: Phaser.GameObjects.GameObject
+  ): void => {
+    const { x, y } = weapon as unknown as { x: number; y: number };
+    Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
+  };
+
+const handleKnifeBigZombieCollision = (
+  _knife: Phaser.GameObjects.GameObject,
+  _bigZombie: Phaser.GameObjects.GameObject
+): void => {
+  (_bigZombie as BigZombie).handleDamage(
+    _knife as Phaser.Physics.Arcade.Sprite,
+    1
+  );
+  disableImage(_knife as Phaser.Physics.Arcade.Image);
+};
 
 const handleKnifeLizardCollision = (
   _knife: Phaser.GameObjects.GameObject,

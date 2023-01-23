@@ -538,6 +538,9 @@
    </properties>
   </object>
  </objectgroup>
+ <objectgroup id="6" name="Boss" offsetx="16" offsety="-16">
+  <object id="45" name="Zombie Boss" type="Big Zombie" gid="91" x="64" y="960" width="64" height="66"/>
+ </objectgroup>
  <objectgroup id="3" name="Lizards">
   <object id="27" name="lizard1" type="Lizard" gid="78" x="71" y="1291.73" width="18.1333" height="31.7333"/>
   <object id="28" name="lizard2" type="Lizard" gid="1073741902" x="343" y="1495.73" width="18.1333" height="31.7333" rotation="180"/>

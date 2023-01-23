@@ -2,6 +2,34 @@ import Phaser from "phaser";
 import AnimationKeys from "~/consts/AnimationKeys";
 import TextureKeys from "~/consts/TextureKeys";
 
+export const createBigZombieAnims = (
+  anims: Phaser.Animations.AnimationManager
+): void => {
+  anims.create({
+    key: AnimationKeys.BigZombieIdle,
+    frames: anims.generateFrameNames(TextureKeys.BigZombie, {
+      start: 0,
+      end: 3,
+      prefix: "big_zombie_idle_anim_f",
+      suffix: ".png",
+    }),
+    repeat: -1,
+    frameRate: 10,
+  });
+
+  anims.create({
+    key: AnimationKeys.BigZombieRun,
+    frames: anims.generateFrameNames(TextureKeys.BigZombie, {
+      start: 0,
+      end: 3,
+      prefix: "big_zombie_run_anim_f",
+      suffix: ".png",
+    }),
+    repeat: -1,
+    frameRate: 10,
+  });
+};
+
 export const createLizardAnims = (
   anims: Phaser.Animations.AnimationManager
 ): void => {

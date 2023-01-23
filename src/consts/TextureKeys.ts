@@ -1,4 +1,5 @@
 enum TextureKeys {
+  BigZombie = "big-zombie",
   Doors = "doors",
   DoorFrames = "door_frames",
   Dungeon = "dungeon",

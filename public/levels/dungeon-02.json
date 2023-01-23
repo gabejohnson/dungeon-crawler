@@ -293,6 +293,31 @@
         }, 
         {
          "draworder":"topdown",
+         "id":6,
+         "name":"Boss",
+         "objects":[
+                {
+                 "class":"Big Zombie",
+                 "gid":91,
+                 "height":66,
+                 "id":45,
+                 "name":"Zombie Boss",
+                 "rotation":0,
+                 "visible":true,
+                 "width":64,
+                 "x":64,
+                 "y":960
+                }],
+         "offsetx":16,
+         "offsety":-16,
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":3,
          "name":"Lizards",
          "objects":[
@@ -963,6 +988,19 @@
                         }]
                 }],
          "tilewidth":16
+        }, 
+        {
+         "columns":1,
+         "firstgid":91,
+         "image":"..\/monsters\/big_zombie.png",
+         "imageheight":272,
+         "imagewidth":32,
+         "margin":0,
+         "name":"big_zombie",
+         "spacing":0,
+         "tilecount":8,
+         "tileheight":34,
+         "tilewidth":32
         }],
  "tilewidth":16,
  "type":"map",

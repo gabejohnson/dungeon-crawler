@@ -14,6 +14,11 @@ export default class Preloader extends Phaser.Scene {
     this.load.tilemapTiledJSON(TextureKeys.Dungeon, "levels/dungeon-02.json");
     this.load.atlas(TextureKeys.Doors, "doors/doors.png", "doors/doors.json");
     this.load.atlas(
+      TextureKeys.BigZombie,
+      "enemies/big_zombie.png",
+      "enemies/big_zombie.json"
+    );
+    this.load.atlas(
       TextureKeys.Player,
       "characters/player.png",
       "characters/player.json"
