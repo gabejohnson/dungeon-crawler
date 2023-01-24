@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import AnimationKeys from "~/consts/AnimationKeys";
-import TextureKeys from "~/consts/TextureKeys";
-import * as Utils from "~/utils/common";
+import Enemy from "./Enemy";
 
 enum Direction {
   Up,
@@ -10,10 +9,7 @@ enum Direction {
   Right,
 }
 
-export default class Lizard extends Phaser.Physics.Arcade.Sprite {
-  private direction: Direction = Phaser.Math.Between(0, 3);
-  private speed: number = 50;
-  private moveEvent: Phaser.Time.TimerEvent;
+export default class Lizard extends Enemy {
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -24,62 +20,5 @@ export default class Lizard extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, texture, frame);
 
     this.anims.play(AnimationKeys.LizardIdle);
-
-    scene.physics.world.on(
-      Phaser.Physics.Arcade.Events.TILE_COLLIDE,
-      this.handleTileCollision,
-      this
-    );
-
-    this.moveEvent = scene.time.addEvent({
-      delay: 2000,
-      callback: () => {
-        if (this.onCamera()) {
-          this.direction = Phaser.Math.Between(0, 3);
-        }
-      },
-      loop: true,
-    });
-  }
-
-  destroy(fromScene?: boolean): void {
-    this.moveEvent.destroy();
-    super.destroy();
-  }
-
-  private handleTileCollision(
-    go: Phaser.GameObjects.GameObject,
-    tile: Phaser.Tilemaps.Tile
-  ): void {
-    if (go != this) {
-      return;
-    }
-    this.direction = Phaser.Math.Between(0, 3);
-  }
-
-  onCamera(): boolean {
-    return Utils.onCamera(this.scene.cameras.main, this);
-  }
-
-  preUpdate(t: number, dt: number): void {
-    if (this.onCamera()) {
-      super.preUpdate(t, dt);
-      const vectors = { x: 0, y: 0 };
-      switch (this.direction) {
-        case Direction.Up:
-          vectors.y = -this.speed;
-          break;
-        case Direction.Down:
-          vectors.y = this.speed;
-          break;
-        case Direction.Left:
-          vectors.x = -this.speed;
-          break;
-        case Direction.Right:
-          vectors.x = this.speed;
-          break;
-      }
-      this.setVelocity(vectors.x, vectors.y);
-    }
   }
 }

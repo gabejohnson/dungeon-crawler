@@ -1,7 +1,4 @@
 import Phaser from "phaser";
-import * as EventCenter from "~/events/EventCenter";
-import AnimationKeys from "~/consts/AnimationKeys";
-import Events from "~/consts/Events";
 import * as Utils from "~/utils/common";
 
 enum Direction {
@@ -17,15 +14,21 @@ enum HealthState {
   Damage,
 }
 
-export default class Wizard extends Phaser.Physics.Arcade.Sprite {
+type Stats = {
+  damagedTime?: integer;
+  hitpoints?: integer;
+  scale?: integer;
+  speed?: integer;
+};
+
+export default class Enemy extends Phaser.Physics.Arcade.Sprite {
+  private _damagedTime: integer;
+  private _hitpoints: number;
+  private _speed: number;
   private damageVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   private direction: Direction = Phaser.Math.Between(0, 3);
-  private fireballs?: Phaser.Physics.Arcade.Group;
-  private firing: boolean = false;
   private sinceDamaged: number = 0;
-  private speed: number = 50;
   private healthState: HealthState = HealthState.Idle;
-  private hitpoints: number = 2;
   private moveEvent: Phaser.Time.TimerEvent;
   private walls?: Phaser.Tilemaps.TilemapLayer;
   constructor(
@@ -33,11 +36,15 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     x: number,
     y: number,
     texture: string,
-    frame?: string | number
+    frame?: string | number,
+    stats: Stats = {}
   ) {
     super(scene, x, y, texture, frame);
 
-    this.anims.play(AnimationKeys.WizardIdle);
+    this._damagedTime = stats.damagedTime ?? 50;
+    this._hitpoints = stats.hitpoints ?? 2;
+    this.scale = stats.scale ?? 1;
+    this._speed = stats.speed ?? 50;
 
     scene.physics.world.on(
       Phaser.Physics.Arcade.Events.TILE_COLLIDE,
@@ -48,7 +55,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     this.moveEvent = scene.time.addEvent({
       delay: 2000,
       callback: () => {
-        if (!this.firing && this.onCamera()) {
+        if (this.onCamera()) {
           this.changeDirection();
         }
       },
@@ -60,25 +67,34 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     this.walls = walls;
   }
 
-  changeDirection(): void {
-    this.direction = Phaser.Math.Between(0, 3);
+  changeDirection(direction?: Direction): void {
+    this.direction = direction ?? Phaser.Math.Between(0, 3);
   }
 
   get dead(): boolean {
-    return this.hitpoints <= 0;
+    return this._hitpoints <= 0;
   }
 
-  handleDamage(weapon: Phaser.Physics.Arcade.Sprite, damage: number): void {
+  destroy(fromScene?: boolean): void {
+    this.moveEvent.destroy();
+    super.destroy();
+  }
+
+  handleDamage(
+    weapon: Phaser.Physics.Arcade.Sprite,
+    damage: number,
+    knockBack: integer = 200
+  ): void {
     if (this.healthState === HealthState.Idle) {
-      this.hitpoints -= damage;
+      this._hitpoints -= damage;
       if (this.dead) {
-        this.moveEvent.destroy();
+        this.destroy();
         super.destroy();
       } else {
         this.damageVector
           .set(this.x - weapon.x, this.y - weapon.y)
           .normalize()
-          .scale(200);
+          .scale(knockBack);
         this.setTint(0xff0000);
         this.sinceDamaged = 0;
         this.healthState = HealthState.Damage;
@@ -104,7 +120,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
           break;
         case HealthState.Damage:
           this.sinceDamaged += dt;
-          if (this.sinceDamaged > 250) {
+          if (this.sinceDamaged > this._damagedTime) {
             this.healthState = HealthState.Idle;
             this.setTint(0xffffff);
             this.sinceDamaged = 0;
@@ -116,16 +132,16 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
       const vectors = { x: 0, y: 0 };
       switch (this.direction) {
         case Direction.Up:
-          vectors.y = -this.speed;
+          vectors.y = -this._speed;
           break;
         case Direction.Down:
-          vectors.y = this.speed;
+          vectors.y = this._speed;
           break;
         case Direction.Left:
-          vectors.x = -this.speed;
+          vectors.x = -this._speed;
           break;
         case Direction.Right:
-          vectors.x = this.speed;
+          vectors.x = this._speed;
           break;
         case Direction.None:
           vectors.x = 0;
@@ -137,10 +153,6 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
         vectors.y + this.damageVector.y
       );
     }
-  }
-
-  setFireballs(fireballs: Phaser.Physics.Arcade.Group): void {
-    this.fireballs = fireballs;
   }
 
   canSeePlayer(playerPosition: { x: number; y: number }): boolean {
@@ -157,25 +169,8 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
 
   update(playerPosition: { x: number; y: number }): void {
     if (this.onCamera()) {
-      if (!this.firing && this.canSeePlayer(playerPosition)) {
-        this.throwFireball(playerPosition);
-      }
       super.update();
     }
-  }
-
-  throwFireball(target: { x: number; y: number }): void {
-    this.direction = Direction.None;
-    this.firing = true;
-    this.scene.time.delayedCall(3000, () => {
-      this.firing = false;
-    });
-    const fireball = this.fireballs?.get(
-      this.x,
-      this.y
-    ) as Phaser.Physics.Arcade.Image;
-    enableFireball(fireball);
-    fireFireball(this, target, fireball);
   }
 
   noWallsBlock(target: { x: number; y: number }): boolean {
@@ -183,28 +178,3 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
     return this.walls?.findTile(Utils.tileOnPath(line)) == null;
   }
 }
-
-const enableFireball = (fireball: Phaser.Physics.Arcade.Image): void => {
-  fireball.setActive(true);
-  fireball.setVisible(false);
-  const body = fireball.body as Phaser.Physics.Arcade.Body;
-  body.setSize(5, 5);
-  body.setEnable(true);
-};
-
-const fireFireball = (
-  origin: { x: number; y: number },
-  target: { x: number; y: number },
-  fireball: Phaser.Physics.Arcade.Image
-): void => {
-  const vector = Utils.calculateUnitVector(origin, target);
-  const fireballVelocity = 300;
-  fireball.setRotation(vector.angle());
-  fireball.setVelocity(
-    vector.x * fireballVelocity,
-    vector.y * fireballVelocity
-  );
-  fireball.x += vector.x;
-  fireball.y += vector.y;
-  EventCenter.sceneEvents.emit(Events.WizardFireballThrown, { fireball });
-};
