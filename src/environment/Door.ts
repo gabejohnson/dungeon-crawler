@@ -42,8 +42,6 @@ export class Door extends Phaser.Physics.Arcade.Sprite {
   open() {
     if (!this.isOpen) {
       this.play(AnimationKeys.DoorOpen);
-      [this.scaleY, this.body.offset.y] =
-        this.direction === Direction.South ? [-1, this.body.height] : [1, 0];
     }
   }
 
@@ -53,6 +51,8 @@ export class Door extends Phaser.Physics.Arcade.Sprite {
 
   setDirection(direction: Direction): void {
     this._direction = direction;
+    [this.scaleY, this.body.offset.y] =
+      this.direction === Direction.South ? [-1, this.body.height] : [1, 0];
   }
 
   setRoom(room: string): void {
