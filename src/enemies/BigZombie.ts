@@ -14,6 +14,7 @@ export default class BigZombie extends Enemy {
     super(scene, x, y, texture, frame, {
       attackFrequency: 2000,
       hitpoints: 20,
+      knockBack: -75,
       scale: 3,
       speed: 100,
     });
@@ -22,6 +23,6 @@ export default class BigZombie extends Enemy {
   }
 
   handleDamage(weapon: Phaser.Physics.Arcade.Sprite, damage: number): void {
-    super.handleDamage(weapon, damage, 100);
+    super.handleDamage(weapon, damage);
   }
 }

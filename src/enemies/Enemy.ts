@@ -10,6 +10,7 @@ type Stats = {
   attackFrequency?: integer;
   damagedTime?: integer;
   hitpoints?: integer;
+  knockBack?: integer;
   scale?: integer;
   speed?: integer;
 };
@@ -18,6 +19,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   private attackFrequency: integer;
   private _damagedTime: integer;
   private _hitpoints: number;
+  private knockBack: integer;
   private _speed: number;
   private damageVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   private direction: Utils.Direction = Utils.getRandomCardinalDirection();
@@ -38,6 +40,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.attackFrequency = stats.attackFrequency ?? 1000;
     this._damagedTime = stats.damagedTime ?? 50;
     this._hitpoints = stats.hitpoints ?? 2;
+    this.knockBack = stats.knockBack ?? 200;
     this.scale = stats.scale ?? 1;
     this._speed = stats.speed ?? 50;
 
@@ -72,11 +75,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     super.destroy();
   }
 
-  handleDamage(
-    weapon: Phaser.Physics.Arcade.Sprite,
-    damage: number,
-    knockBack: integer = 200
-  ): void {
+  handleDamage(weapon: Phaser.Physics.Arcade.Sprite, damage: number): void {
     if (this.healthState === HealthState.Idle) {
       this._hitpoints -= damage;
       if (this.dead) {
@@ -85,7 +84,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.damageVector
           .set(this.x - weapon.x, this.y - weapon.y)
           .normalize()
-          .scale(knockBack);
+          .scale(this.knockBack);
         this.setTint(0xff0000);
         this.sinceDamaged = 0;
         this.healthState = HealthState.Damage;
