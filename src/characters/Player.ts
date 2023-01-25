@@ -81,7 +81,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         } else if (this.activeDoor && !this.activeDoor.isOpen) {
           EventCenter.sceneEvents.emit(Events.DoorOpened, this.activeDoor);
         } else {
-          throwKnife(this);
+          attack(this);
         }
       }
 
@@ -144,13 +144,13 @@ const directionalKeyIsDown = ({
 }: Phaser.Types.Input.Keyboard.CursorKeys): boolean =>
   up?.isDown || down?.isDown || left?.isDown || right?.isDown;
 
-const enableKnife = (
+const enableWeapon = (
   dimensions: { width: number; height: number },
-  knife: Phaser.Physics.Arcade.Image
+  weapon: Phaser.Physics.Arcade.Image
 ): void => {
-  knife.setActive(true);
-  knife.setVisible(true);
-  const body = knife.body as Phaser.Physics.Arcade.Body;
+  weapon.setActive(true);
+  weapon.setVisible(true);
+  const body = weapon.body as Phaser.Physics.Arcade.Body;
   body.setSize(dimensions.width, dimensions.height);
   body.setEnable(true);
 };
@@ -214,18 +214,18 @@ const faceUp = (player: Player): void => {
   player.anims.play(AnimationKeys.PlayerRunUp, true);
 };
 
-const fireKnife = (
+const useWeapon = (
   origin: { x: number; y: number },
   target: { x: number; y: number },
-  knife: Phaser.Physics.Arcade.Image
+  weapon: Phaser.Physics.Arcade.Image
 ): void => {
-  const vector = calculateUnitVector(origin, target);
-  const knifeOffset = 15;
-  const knifeVelocity = 300;
-  knife.setRotation(vector.angle());
-  knife.setVelocity(vector.x * knifeVelocity, vector.y * knifeVelocity);
-  knife.x += vector.x * knifeOffset;
-  knife.y += vector.y * knifeOffset;
+  const vector = Utils.calculateUnitVector(origin, target);
+  const weaponOffset = 15;
+  const weaponVelocity = 300;
+  weapon.setRotation(vector.angle());
+  weapon.setVelocity(vector.x * weaponVelocity, vector.y * weaponVelocity);
+  weapon.x += vector.x * weaponOffset;
+  weapon.y += vector.y * weaponOffset;
 };
 
 const getDirectionWithCursors = (
@@ -451,29 +451,29 @@ const stop = (player: Player): Phaser.Physics.Arcade.Sprite => {
   return player.stop();
 };
 
-const throwKnife = (player: Player): void => {
-  const knife = player.knives?.get(
+const attack = (player: Player): void => {
+  const weapon = player.knives?.get(
     player.x,
     player.y,
     TextureKeys.Knife
   ) as Phaser.Physics.Arcade.Image;
-  if (knife != null) {
+  if (weapon != null) {
     let [bodyWidth, bodyHeight] = [0, 0];
     switch (player.anims.currentAnim.key) {
       case AnimationKeys.PlayerIdleDown:
       case AnimationKeys.PlayerRunDown:
-        [bodyWidth, bodyHeight] = [knife.height, knife.width];
+        [bodyWidth, bodyHeight] = [weapon.height, weapon.width];
         break;
       case AnimationKeys.PlayerIdleSide:
       case AnimationKeys.PlayerRunSide:
-        [bodyWidth, bodyHeight] = [knife.width, knife.height];
+        [bodyWidth, bodyHeight] = [weapon.width, weapon.height];
         break;
       case AnimationKeys.PlayerIdleUp:
       case AnimationKeys.PlayerRunUp:
-        [bodyWidth, bodyHeight] = [knife.height, knife.width];
+        [bodyWidth, bodyHeight] = [weapon.height, weapon.width];
         break;
     }
-    enableKnife({ width: bodyWidth, height: bodyHeight }, knife);
-    fireKnife(player, player.aimTarget, knife);
+    enableWeapon({ width: bodyWidth, height: bodyHeight }, weapon);
+    useWeapon(player, player.aimTarget, weapon);
   }
 };
