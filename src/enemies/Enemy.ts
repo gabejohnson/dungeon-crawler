@@ -1,14 +1,6 @@
 import Phaser from "phaser";
 import * as Utils from "~/utils/common";
 
-enum Direction {
-  Up,
-  Down,
-  Left,
-  Right,
-  None,
-}
-
 enum HealthState {
   Idle,
   Damage,
@@ -26,7 +18,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   private _hitpoints: number;
   private _speed: number;
   private damageVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
-  private direction: Direction = Phaser.Math.Between(0, 3);
+  private direction: Utils.Direction = Utils.getRandomCardinalDirection();
   private sinceDamaged: number = 0;
   private healthState: HealthState = HealthState.Idle;
   private moveEvent: Phaser.Time.TimerEvent;
@@ -67,8 +59,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.walls = walls;
   }
 
-  changeDirection(direction?: Direction): void {
-    this.direction = direction ?? Phaser.Math.Between(0, 3);
+  changeDirection(direction: Utils.Direction): void {
+    this.direction = direction;
   }
 
   get dead(): boolean {
@@ -109,7 +101,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (go != this) {
       return;
     }
-    this.changeDirection();
+    this.changeDirection(Utils.getRandomCardinalDirection());
   }
 
   preUpdate(t: number, dt: number): void {
@@ -129,25 +121,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
           break;
       }
 
-      const vectors = { x: 0, y: 0 };
-      switch (this.direction) {
-        case Direction.Up:
-          vectors.y = -this._speed;
-          break;
-        case Direction.Down:
-          vectors.y = this._speed;
-          break;
-        case Direction.Left:
-          vectors.x = -this._speed;
-          break;
-        case Direction.Right:
-          vectors.x = this._speed;
-          break;
-        case Direction.None:
-          vectors.x = 0;
-          vectors.y = 0;
-          break;
-      }
+      const vectors = Utils.getVelocityVectors(this.direction, this.speed);
       this.setVelocity(
         vectors.x + this.damageVector.x,
         vectors.y + this.damageVector.y

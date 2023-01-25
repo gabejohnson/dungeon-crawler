@@ -25,28 +25,16 @@ enum HealthState {
   Dead,
 }
 
-export enum Direction {
-  North,
-  NorthEast,
-  East,
-  SouthEast,
-  South,
-  SouthWest,
-  West,
-  NorthWest,
-  None,
-}
-
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private _coins: number = 0;
   health: number = 6;
   activeChest?: Chest;
   activeDoor?: Door.Door;
   aimTarget: { x: number; y: number } = { x: 0, y: 0 };
-  direction: Direction;
+  direction: Utils.Direction;
   healthState: HealthState = HealthState.Idle;
   knives?: Phaser.Physics.Arcade.Group;
-  moveTarget?: { x: number; y: number };
+  moveTarget?: Utils.Coordinates;
   sinceDamaged: number = 0;
   speed: number = 100;
 
@@ -60,7 +48,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, texture, frame);
 
     this.anims.play(AnimationKeys.PlayerIdleDown);
-    this.direction = Direction.South;
+    this.direction = Utils.Direction.South;
   }
 
   preUpdate(t: number, dt: number): void {
@@ -100,14 +88,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.healthState !== HealthState.Damage &&
         this.healthState !== HealthState.Dead
       ) {
-        this.direction = getDirection(cursors, this);
+        this.direction = this.moveTarget
+          ? Utils.getDirectionWithTarget(this, this.moveTarget)
+          : getDirectionWithCursors(cursors);
         facePlayer(this);
         if (directionalKeyIsDown(cursors)) {
           // arrow key navigation override
           this.moveTarget = undefined;
         }
         if (this.moveTarget == null) {
-          moveWithKeys(this);
+          moveWithDirection(this);
         } else {
           moveWithTarget(this);
         }
@@ -122,17 +112,6 @@ export const aimAt = (
 ): void => {
   player.aimTarget = target;
 };
-
-const atTarget = (player: Player): boolean => {
-  const { x, y } = distanceToTarget(player);
-  return x === 0 && y === 0;
-};
-
-const calculateUnitVector = (
-  origin: { x: number; y: number },
-  target: { x: number; y: number }
-): Phaser.Math.Vector2 =>
-  new Phaser.Math.Vector2(target.x - origin.x, target.y - origin.y).normalize();
 
 export const collideWithChest = (chest: Chest, player: Player): void => {
   if (chest !== player.activeChest) {
@@ -164,24 +143,6 @@ const directionalKeyIsDown = ({
 }: Phaser.Types.Input.Keyboard.CursorKeys): boolean =>
   up?.isDown || down?.isDown || left?.isDown || right?.isDown;
 
-const distanceToTarget = (player: Player): { x: number; y: number } => {
-  let dx = 0;
-  let dy = 0;
-
-  if (player.moveTarget) {
-    dx = player.moveTarget.x - player.x;
-    dy = player.moveTarget.y - player.y;
-
-    if (Math.abs(dx) < 5) {
-      dx = 0;
-    }
-    if (Math.abs(dy) < 5) {
-      dy = 0;
-    }
-  }
-  return { x: dx, y: dy };
-};
-
 const enableKnife = (
   dimensions: { width: number; height: number },
   knife: Phaser.Physics.Arcade.Image
@@ -205,39 +166,39 @@ const faceLeft = (player: Player): void => {
 
 const facePlayer = (player: Player): void => {
   switch (player.direction) {
-    case Direction.NorthEast:
+    case Utils.Direction.NorthEast:
       faceRight(player);
       break;
 
-    case Direction.SouthEast:
+    case Utils.Direction.SouthEast:
       faceRight(player);
       break;
 
-    case Direction.SouthWest:
+    case Utils.Direction.SouthWest:
       faceDown(player);
       break;
 
-    case Direction.NorthWest:
+    case Utils.Direction.NorthWest:
       faceLeft(player);
       break;
 
-    case Direction.North:
+    case Utils.Direction.North:
       faceUp(player);
       break;
 
-    case Direction.East:
+    case Utils.Direction.East:
       faceRight(player);
       break;
 
-    case Direction.South:
+    case Utils.Direction.South:
       faceDown(player);
       break;
 
-    case Direction.West:
+    case Utils.Direction.West:
       faceLeft(player);
       break;
 
-    case Direction.None:
+    case Utils.Direction.None:
       break;
   }
 };
@@ -266,60 +227,15 @@ const fireKnife = (
   knife.y += vector.y * knifeOffset;
 };
 
-const getDirection = (
-  cursors: Phaser.Types.Input.Keyboard.CursorKeys,
-  player: Player
-): Direction => {
-  let leftDown;
-  let rightDown;
-  let upDown;
-  let downDown;
-
-  if (player.moveTarget != null) {
-    const { x: dx, y: dy } = distanceToTarget(player);
-
-    // a key is down based on dx and dy
-    leftDown = dx < 0;
-    rightDown = dx > 0;
-    upDown = dy < 0;
-    downDown = dy > 0;
-  } else {
-    // use cursor to determine direction
-    leftDown = cursors.left?.isDown;
-    rightDown = cursors.right?.isDown;
-    upDown = cursors.up?.isDown;
-    downDown = cursors.down?.isDown;
-  }
-
-  switch (true) {
-    case upDown && rightDown:
-      return Direction.NorthEast;
-
-    case rightDown && downDown:
-      return Direction.SouthEast;
-
-    case downDown && leftDown:
-      return Direction.SouthWest;
-
-    case leftDown && upDown:
-      return Direction.NorthWest;
-
-    case upDown:
-      return Direction.North;
-
-    case rightDown:
-      return Direction.East;
-
-    case downDown:
-      return Direction.South;
-
-    case leftDown:
-      return Direction.West;
-
-    default:
-      return Direction.None;
-  }
-};
+const getDirectionWithCursors = (
+  cursors: Phaser.Types.Input.Keyboard.CursorKeys
+): Utils.Direction =>
+  Utils.getDirection({
+    east: cursors.right?.isDown,
+    north: cursors.up?.isDown,
+    south: cursors.down?.isDown,
+    west: cursors.left?.isDown,
+  });
 
 const handleDamage = (
   weapon: { damage: number; x: number; y: number },
@@ -331,14 +247,14 @@ const handleDamage = (
       killPlayer(player);
       player.healthState = HealthState.Dead;
     } else {
-      const dir = new Phaser.Math.Vector2(
+      const direction = new Phaser.Math.Vector2(
         player.x - weapon.x,
         player.y - weapon.y
       )
         .normalize()
         .scale(200);
 
-      injurePlayer(dir, player);
+      injurePlayer(direction, player);
 
       player.sinceDamaged = 0;
       player.healthState = HealthState.Damage;
@@ -371,11 +287,6 @@ const injurePlayer = (
 };
 
 export const isDead = (player: Player): boolean => player.health <= 0;
-
-const isMoving = (player: Player): boolean => {
-  const { x, y } = player.body.velocity;
-  return x !== 0 && y !== 0;
-};
 
 const killPlayer = (player: Player): void => {
   player.play(AnimationKeys.PlayerFaint);
@@ -481,41 +392,41 @@ const moveWest = (player: Player): void => {
   aimAt({ x: player.x - 10, y: player.y }, player);
 };
 
-const moveWithKeys = (player: Player): void => {
+const moveWithDirection = (player: Player): void => {
   switch (player.direction) {
-    case Direction.NorthEast:
+    case Utils.Direction.NorthEast:
       moveNorthEast(player);
       break;
 
-    case Direction.SouthEast:
+    case Utils.Direction.SouthEast:
       moveSouthEast(player);
       break;
 
-    case Direction.SouthWest:
+    case Utils.Direction.SouthWest:
       moveSouthWest(player);
       break;
 
-    case Direction.NorthWest:
+    case Utils.Direction.NorthWest:
       moveNorthWest(player);
       break;
 
-    case Direction.North:
+    case Utils.Direction.North:
       moveNorth(player);
       break;
 
-    case Direction.East:
+    case Utils.Direction.East:
       moveEast(player);
       break;
 
-    case Direction.South:
+    case Utils.Direction.South:
       moveSouth(player);
       break;
 
-    case Direction.West:
+    case Utils.Direction.West:
       moveWest(player);
       break;
 
-    case Direction.None:
+    case Utils.Direction.None:
       idle(player);
       break;
   }
@@ -523,10 +434,10 @@ const moveWithKeys = (player: Player): void => {
 
 const moveWithTarget = (player: Player): void => {
   if (player.moveTarget != null) {
-    if (!isMoving(player)) {
-      const { x, y } = calculateUnitVector(player, player.moveTarget);
+    if (!Utils.isMoving(player)) {
+      const { x, y } = Utils.calculateUnitVector(player, player.moveTarget);
       move({ x: x * player.speed, y: y * player.speed }, player);
-    } else if (atTarget(player)) {
+    } else if (Utils.atTarget(player, player.moveTarget ?? player)) {
       player.moveTarget = undefined;
       idle(player);
     }

@@ -179,8 +179,7 @@ export default class Wizard extends Phaser.Physics.Arcade.Sprite {
   }
 
   noWallsBlock(target: { x: number; y: number }): boolean {
-    const line = new Phaser.Geom.Line(this.x, this.y, target.x, target.y);
-    return this.walls?.findTile(Utils.tileOnPath(line)) == null;
+    return !Utils.layerBlocks(this, target, this.walls);
   }
 }
 
