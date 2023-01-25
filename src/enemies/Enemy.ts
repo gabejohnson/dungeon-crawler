@@ -6,6 +6,8 @@ enum HealthState {
   Damage,
 }
 
+const Tint = { Damaged: 0xff0000, Idle: 0xffffff };
+
 type Stats = {
   attackFrequency?: integer;
   damagedTime?: integer;
@@ -49,7 +51,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.handleTileCollision,
       this
     );
-        }
+  }
 
   attack(target: Utils.Coordinates): void {
     this.changeDirection(Utils.getRandomCardinalDirection());
@@ -81,10 +83,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (this.dead) {
         this.destroy();
       } else {
-        this.damageVector
-          .set(this.x - weapon.x, this.y - weapon.y)
-          .normalize()
-          .scale(this.knockBack);
+        this.setDamaged({ x: this.x - weapon.x, y: this.y - weapon.y });
         this.setTint(0xff0000);
         this.sinceDamaged = 0;
         this.healthState = HealthState.Damage;
@@ -111,10 +110,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         case HealthState.Damage:
           this.sinceDamaged += dt;
           if (this.sinceDamaged > this._damagedTime) {
-            this.healthState = HealthState.Idle;
-            this.setTint(0xffffff);
-            this.sinceDamaged = 0;
-            this.damageVector.reset();
+            this.setIdle();
           }
           break;
       }
@@ -141,6 +137,20 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   onCamera(): boolean {
     return Utils.onCamera(this.scene.cameras.main, this);
+  }
+
+  setDamaged({ x, y }: { x: integer; y: integer }): void {
+    this.damageVector.set(x, y).normalize().scale(this.knockBack);
+    this.setTint(Tint.Damaged);
+    this.sinceDamaged = 0;
+    this.healthState = HealthState.Damage;
+  }
+
+  setIdle(): void {
+    this.healthState = HealthState.Idle;
+    this.setTint(Tint.Idle);
+    this.sinceDamaged = 0;
+    this.damageVector.reset();
   }
 
   update(playerPosition: Utils.Coordinates, sinceLastUpdate: number): void {
