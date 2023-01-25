@@ -12,7 +12,7 @@ export default class BigZombie extends Enemy {
     frame?: string | number
   ) {
     super(scene, x, y, texture, frame, {
-      damagedTime: 50,
+      attackFrequency: 2000,
       hitpoints: 20,
       scale: 3,
       speed: 100,

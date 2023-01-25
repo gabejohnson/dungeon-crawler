@@ -5,6 +5,7 @@ import TextureKeys from "~/consts/TextureKeys";
 import Chest from "~/items/Chest";
 import Events from "~/consts/Events";
 import * as Door from "~/environment/Door";
+import * as Utils from "~/utils/common";
 
 declare global {
   namespace Phaser.GameObjects {

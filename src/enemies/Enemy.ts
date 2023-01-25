@@ -7,6 +7,7 @@ enum HealthState {
 }
 
 type Stats = {
+  attackFrequency?: integer;
   damagedTime?: integer;
   hitpoints?: integer;
   scale?: integer;
@@ -14,15 +15,16 @@ type Stats = {
 };
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
+  private attackFrequency: integer;
   private _damagedTime: integer;
   private _hitpoints: number;
   private _speed: number;
   private damageVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   private direction: Utils.Direction = Utils.getRandomCardinalDirection();
   private sinceDamaged: number = 0;
+  private sinceLastAttack: integer = 0;
   private healthState: HealthState = HealthState.Idle;
-  private moveEvent: Phaser.Time.TimerEvent;
-  private walls?: Phaser.Tilemaps.TilemapLayer;
+  private _walls?: Phaser.Tilemaps.TilemapLayer;
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -33,6 +35,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   ) {
     super(scene, x, y, texture, frame);
 
+    this.attackFrequency = stats.attackFrequency ?? 1000;
     this._damagedTime = stats.damagedTime ?? 50;
     this._hitpoints = stats.hitpoints ?? 2;
     this.scale = stats.scale ?? 1;
@@ -43,20 +46,14 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.handleTileCollision,
       this
     );
-
-    this.moveEvent = scene.time.addEvent({
-      delay: 2000,
-      callback: () => {
-        if (this.onCamera()) {
-          this.changeDirection();
         }
-      },
-      loop: true,
-    });
+
+  attack(target: Utils.Coordinates): void {
+    this.changeDirection(Utils.getRandomCardinalDirection());
   }
 
   setWalls(walls: Phaser.Tilemaps.TilemapLayer): void {
-    this.walls = walls;
+    this._walls = walls;
   }
 
   changeDirection(direction: Utils.Direction): void {
@@ -67,8 +64,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this._hitpoints <= 0;
   }
 
+  get walls(): Phaser.Tilemaps.TilemapLayer | undefined {
+    return this._walls;
+  }
+
   destroy(fromScene?: boolean): void {
-    this.moveEvent.destroy();
     super.destroy();
   }
 
@@ -81,7 +81,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this._hitpoints -= damage;
       if (this.dead) {
         this.destroy();
-        super.destroy();
       } else {
         this.damageVector
           .set(this.x - weapon.x, this.y - weapon.y)
@@ -121,7 +120,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
           break;
       }
 
-      const vectors = Utils.getVelocityVectors(this.direction, this.speed);
+      const vectors = Utils.getVelocityVectors(this.direction, this._speed);
       this.setVelocity(
         vectors.x + this.damageVector.x,
         vectors.y + this.damageVector.y
@@ -137,18 +136,22 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
+  noWallsBlock(target: { x: number; y: number }): boolean {
+    return !Utils.layerBlocks(this, target, this._walls);
+  }
+
   onCamera(): boolean {
     return Utils.onCamera(this.scene.cameras.main, this);
   }
 
-  update(playerPosition: { x: number; y: number }): void {
+  update(playerPosition: Utils.Coordinates, sinceLastUpdate: number): void {
     if (this.onCamera()) {
+      this.sinceLastAttack += sinceLastUpdate;
+      if (this.sinceLastAttack >= this.attackFrequency) {
+        this.attack(playerPosition);
+        this.sinceLastAttack = 0;
+      }
       super.update();
     }
-  }
-
-  noWallsBlock(target: { x: number; y: number }): boolean {
-    const line = new Phaser.Geom.Line(this.x, this.y, target.x, target.y);
-    return this.walls?.findTile(Utils.tileOnPath(line)) == null;
   }
 }

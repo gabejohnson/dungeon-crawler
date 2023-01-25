@@ -19,6 +19,7 @@ import * as Door from "~/environment/Door";
 type Room = [number, number];
 
 export default class Game extends Phaser.Scene {
+  private bigZombies!: Phaser.Physics.Arcade.Group;
   private currentRoom?: string;
   private mapObjects: {
     doors: { [key: string]: Door.Door };
@@ -26,6 +27,7 @@ export default class Game extends Phaser.Scene {
   } = { doors: {}, rooms: {} };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private doors!: Phaser.Physics.Arcade.Group;
+  private lizards!: Phaser.Physics.Arcade.Group;
   private map!: Phaser.Tilemaps.Tilemap;
   private player!: Player.Player;
   private playerBigZombiesCollider?: Phaser.Physics.Arcade.Collider;
@@ -108,7 +110,7 @@ export default class Game extends Phaser.Scene {
     this.player = this.add.player(...room, TextureKeys.Player);
     this.player.knives = knives;
 
-    const bigZombies = this.physics.add.group({
+    this.bigZombies = this.physics.add.group({
       classType: BigZombie,
       createCallback: go => {
         const bigZombie = go as BigZombie;
@@ -117,7 +119,7 @@ export default class Game extends Phaser.Scene {
     });
     EnemyAnims.createBigZombieAnims(this.anims);
     map.getObjectLayer("Boss")?.objects.forEach(bigZombieObject => {
-      const bigZombie = bigZombies.get(
+      const bigZombie = this.bigZombies.get(
         bigZombieObject.x! + bigZombieObject.width! * 0.5,
         bigZombieObject.y! - bigZombieObject.height! * 0.5,
         TextureKeys.BigZombie
@@ -126,7 +128,11 @@ export default class Game extends Phaser.Scene {
       bigZombie.body.offset.y = 10;
     });
 
-    const lizards = this.physics.add.group({
+    this.bigZombies.children.each((_bigZombie: Phaser.GameObjects.GameObject) =>
+      (_bigZombie as BigZombie).setWalls(wallsLayer)
+    );
+
+    this.lizards = this.physics.add.group({
       classType: Lizard,
       createCallback: go => {
         const lizard = go as Lizard;
@@ -135,7 +141,7 @@ export default class Game extends Phaser.Scene {
     });
     EnemyAnims.createLizardAnims(this.anims);
     map.getObjectLayer("Lizards")?.objects.forEach(lizardObject => {
-      const lizard = lizards.get(
+      const lizard = this.lizards.get(
         lizardObject.x! + lizardObject.width! * 0.5,
         lizardObject.y! - lizardObject.height! * 0.5,
         TextureKeys.Lizard
@@ -207,20 +213,20 @@ export default class Game extends Phaser.Scene {
       this
     );
     this.physics.add.collider(this.player, chests, handlePlayerChestCollision);
-    this.physics.add.collider(bigZombies, wallsLayer);
-    this.physics.add.collider(bigZombies, chests);
-    this.physics.add.collider(lizards, wallsLayer);
-    this.physics.add.collider(lizards, chests);
+    this.physics.add.collider(this.bigZombies, wallsLayer);
+    this.physics.add.collider(this.bigZombies, chests);
+    this.physics.add.collider(this.lizards, wallsLayer);
+    this.physics.add.collider(this.lizards, chests);
     this.physics.add.collider(this.wizards, wallsLayer);
     this.physics.add.collider(this.wizards, chests);
     this.playerBigZombiesCollider = this.physics.add.collider(
-      bigZombies,
+      this.bigZombies,
       this.player,
       handlePlayerWeaponCollision(1)
     );
 
     this.playerLizardsCollider = this.physics.add.collider(
-      lizards,
+      this.lizards,
       this.player,
       handlePlayerWeaponCollision(1)
     );
@@ -239,10 +245,10 @@ export default class Game extends Phaser.Scene {
     this.physics.add.collider(knives, wallsLayer, handleKnifeWallCollision);
     this.physics.add.collider(
       knives,
-      bigZombies,
+      this.bigZombies,
       handleKnifeBigZombieCollision
     );
-    this.physics.add.collider(knives, lizards, handleKnifeLizardCollision);
+    this.physics.add.collider(knives, this.lizards, handleKnifeLizardCollision);
     this.physics.add.collider(knives, this.wizards, handleKnifeWizardCollision);
     this.physics.add.collider(
       fireballs,
@@ -327,9 +333,15 @@ export default class Game extends Phaser.Scene {
       }
     }
 
-    this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) => {
-      (wizard as Wizard).update(this.player);
-    });
+    this.bigZombies.children.each((bigZombie: Phaser.GameObjects.GameObject) =>
+      (bigZombie as BigZombie).update(this.player, dt)
+    );
+    this.lizards.children.each((lizard: Phaser.GameObjects.GameObject) =>
+      (lizard as Lizard).update(this.player, dt)
+    );
+    this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) =>
+      (wizard as Wizard).update(this.player)
+    );
   }
 
   private handleDoorOpened(door: Door.Door): void {
