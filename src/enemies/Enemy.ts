@@ -41,7 +41,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     this.attackFrequency = stats.attackFrequency ?? 1000;
     this._damagedTime = stats.damagedTime ?? 50;
-    this._hitpoints = stats.hitpoints ?? 2;
+    this._hitpoints = stats.hitpoints ?? 1;
     this.knockBack = stats.knockBack ?? 200;
     this.scale = stats.scale ?? 1;
     this._speed = stats.speed ?? 50;

@@ -17,7 +17,7 @@ export default class Lizard extends Enemy {
     texture: string,
     frame?: string | number
   ) {
-    super(scene, x, y, texture, frame);
+    super(scene, x, y, texture, frame, { hitpoints: 2 });
 
     this.anims.play(AnimationKeys.LizardIdle);
   }

@@ -487,7 +487,7 @@ const handleKnifeLizardCollision = (
   _knife: Phaser.GameObjects.GameObject,
   _lizard: Phaser.GameObjects.GameObject
 ): void => {
-  (_lizard as Lizard).destroy();
+  (_lizard as Lizard).handleDamage(_knife as Phaser.Physics.Arcade.Sprite, 1);
   disableImage(_knife as Phaser.Physics.Arcade.Image);
 };
 
