@@ -334,10 +334,10 @@ export default class Game extends Phaser.Scene {
     }
 
     this.bigZombies.children.each((bigZombie: Phaser.GameObjects.GameObject) =>
-      (bigZombie as BigZombie).update(this.player, dt)
+      (bigZombie as BigZombie).update(this.player)
     );
     this.lizards.children.each((lizard: Phaser.GameObjects.GameObject) =>
-      (lizard as Lizard).update(this.player, dt)
+      (lizard as Lizard).update(this.player)
     );
     this.wizards.children.each((wizard: Phaser.GameObjects.GameObject) =>
       (wizard as Wizard).update(this.player)

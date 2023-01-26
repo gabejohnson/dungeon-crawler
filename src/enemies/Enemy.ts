@@ -104,6 +104,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   preUpdate(t: number, dt: number): void {
     if (this.onCamera()) {
       super.preUpdate(t, dt);
+      this.sinceLastAttack += dt;
+      if (this.sinceLastAttack > this.attackFrequency) {
+        this.sinceLastAttack = 0;
+      }
       switch (this.healthState) {
         case HealthState.Idle:
           break;
@@ -153,12 +157,14 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.damageVector.reset();
   }
 
-  update(playerPosition: Utils.Coordinates, sinceLastUpdate: number): void {
+  shouldAttack(): boolean {
+    return this.sinceLastAttack === 0;
+  }
+
+  update(playerPosition: Utils.Coordinates): void {
     if (this.onCamera()) {
-      this.sinceLastAttack += sinceLastUpdate;
-      if (this.sinceLastAttack >= this.attackFrequency) {
+      if (this.shouldAttack()) {
         this.attack(playerPosition);
-        this.sinceLastAttack = 0;
       }
       super.update();
     }
