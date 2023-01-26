@@ -59,7 +59,7 @@ export default class Game extends Phaser.Scene {
       this.mapObjects.rooms[room.name] = [room.x ?? 0, room.y ?? 0];
     });
 
-    this.currentRoom = "Level 1";
+    this.currentRoom = "room1";
     const room = this.mapObjects.rooms[this.currentRoom];
     this.cameras.main.centerOn(...room);
 

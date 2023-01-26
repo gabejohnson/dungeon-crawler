@@ -249,7 +249,7 @@
                         {
                          "name":"room",
                          "type":"string",
-                         "value":"Level 1"
+                         "value":"room1"
                         }],
                  "rotation":0,
                  "visible":true,
@@ -277,7 +277,7 @@
                         {
                          "name":"room",
                          "type":"string",
-                         "value":"Level 2"
+                         "value":"room2"
                         }],
                  "rotation":0,
                  "visible":true,
@@ -297,11 +297,11 @@
          "name":"Boss",
          "objects":[
                 {
-                 "class":"Big Zombie",
+                 "class":"BigZombie",
                  "gid":91,
                  "height":66,
                  "id":45,
-                 "name":"Zombie Boss",
+                 "name":"boss",
                  "rotation":0,
                  "visible":true,
                  "width":64,
@@ -361,7 +361,7 @@
                  "ellipse":true,
                  "height":0,
                  "id":30,
-                 "name":"Level 1",
+                 "name":"room1",
                  "rotation":0,
                  "visible":true,
                  "width":0,
@@ -373,7 +373,7 @@
                  "ellipse":true,
                  "height":0,
                  "id":36,
-                 "name":"Level 2",
+                 "name":"room2",
                  "rotation":0,
                  "visible":true,
                  "width":0,
