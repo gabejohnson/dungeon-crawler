@@ -74,7 +74,16 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroy(fromScene?: boolean): void {
-    super.destroy();
+    this.disableBody(true);
+    const deathDuration = 1000;
+    const interval = setInterval(() => {
+      this.alpha -= 0.1;
+    }, deathDuration / 10);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      super.destroy();
+    }, deathDuration);
   }
 
   handleDamage(weapon: Phaser.Physics.Arcade.Sprite, damage: number): void {
