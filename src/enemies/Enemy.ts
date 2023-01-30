@@ -161,6 +161,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this.sinceLastAttack === 0;
   }
 
+  stopMoving(): void {
+    this.direction = Utils.Direction.None;
+  }
+
   update(playerPosition: Utils.Coordinates): void {
     if (this.onCamera()) {
       if (this.shouldAttack()) {
