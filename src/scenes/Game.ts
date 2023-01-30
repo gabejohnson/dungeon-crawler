@@ -25,8 +25,11 @@ export default class Game extends Phaser.Scene {
     doors: { [key: string]: Door.Door };
     rooms: { [key: string]: Room };
   } = { doors: {}, rooms: {} };
+  private chests!: Phaser.Physics.Arcade.StaticGroup;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private doors!: Phaser.Physics.Arcade.Group;
+  private fireballs!: Phaser.Physics.Arcade.Group;
+  private knives!: Phaser.Physics.Arcade.Group;
   private lizards!: Phaser.Physics.Arcade.Group;
   private map!: Phaser.Tilemaps.Tilemap;
   private player!: Player.Player;
@@ -35,6 +38,7 @@ export default class Game extends Phaser.Scene {
   private playerLizardsCollider?: Phaser.Physics.Arcade.Collider;
   private playerWizardsCollider?: Phaser.Physics.Arcade.Collider;
   private sparkles!: Phaser.GameObjects.Particles.ParticleEmitterManager;
+  private wallsLayer!: Phaser.Tilemaps.TilemapLayer;
   private wizards!: Phaser.Physics.Arcade.Group;
 
   private wizardWeapons: WeakMap<
@@ -52,10 +56,9 @@ export default class Game extends Phaser.Scene {
 
   create(): void {
     this.scene.run(SceneKeys.GameUI);
-    TreasureAnims.createChestAnims(this.anims);
-    const map = (this.map = this.make.tilemap({ key: TextureKeys.Dungeon }));
+    this.map = this.make.tilemap({ key: TextureKeys.Dungeon });
 
-    map.getObjectLayer("Metadata")?.objects.forEach(room => {
+    this.map.getObjectLayer("Metadata")?.objects.forEach(room => {
       this.mapObjects.rooms[room.name] = [room.x ?? 0, room.y ?? 0];
     });
 
@@ -63,200 +66,36 @@ export default class Game extends Phaser.Scene {
     const room = this.mapObjects.rooms[this.currentRoom];
     this.cameras.main.centerOn(...room);
 
-    const groundTileset = map.addTilesetImage(TextureKeys.Ground);
+    this.map.createLayer(
+      "Ground",
+      this.map.addTilesetImage(TextureKeys.Ground)
+    );
 
-    map.createLayer("Ground", groundTileset);
-
-    const knives = this.physics.add.group({
+    this.knives = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Image,
       maxSize: 3,
     });
 
-    const wallsTileset = map.addTilesetImage(TextureKeys.Walls);
-    const doorFrameTileset = map.addTilesetImage(TextureKeys.DoorFrames);
-
-    const wallsLayer = map
-      .createLayer("Walls", [wallsTileset, doorFrameTileset])
+    this.wallsLayer = this.map
+      .createLayer("Walls", [
+        this.map.addTilesetImage(TextureKeys.Walls),
+        this.map.addTilesetImage(TextureKeys.DoorFrames),
+      ])
       .setCollisionByProperty({ collides: true });
-
-    this.doors = this.physics.add.group({
-      classType: Door.Door,
-    });
-
-    EnvironmentAnims.createDoorAnims(this.anims);
-    map.getObjectLayer("Doors")?.objects.forEach(_door => {
-      // TODO: we should abstract away calculating the coordinates
-      const door = this.doors.get(
-        _door.x! + _door.width! * 0.5,
-        _door.y! - _door.height! * 0.5,
-        TextureKeys.Doors
-      ) as Door.Door;
-      door.setPushable(false);
-      const doorData: { destination: string; room: string } =
-        _door?.properties?.reduce(
-          (
-            acc: { [key: string]: unknown },
-            property: { name: string; value: unknown }
-          ) => ((acc[property.name] = property.value), acc),
-          {}
-        );
-      door.setDestination(doorData.destination);
-      door.setRoom(doorData.room);
-      door.setDirection(getDoorDirection(_door));
-      this.mapObjects.doors[_door.name] = door;
-    });
 
     CharacterAnims.createCharacterAnims(this.anims);
     this.player = this.add.player(...room, TextureKeys.Player);
-    this.player.knives = knives;
+    this.player.knives = this.knives;
 
-    this.bigZombies = this.physics.add.group({
-      classType: BigZombie,
-      createCallback: go => {
-        const bigZombie = go as BigZombie;
-        bigZombie.body.onCollide = true;
-      },
-    });
-    EnemyAnims.createBigZombieAnims(this.anims);
-    map.getObjectLayer("Boss")?.objects.forEach(bigZombieObject => {
-      const bigZombie = this.bigZombies.get(
-        bigZombieObject.x! + bigZombieObject.width! * 0.5,
-        bigZombieObject.y! - bigZombieObject.height! * 0.5,
-        TextureKeys.BigZombie
-      ) as BigZombie;
-      bigZombie.body.setSize(bigZombie.width * 0.9, bigZombie.height * 0.6);
-      bigZombie.body.offset.y = 10;
-    });
+    this.createDoors();
+    this.createChests();
+    this.createBigZombies();
+    this.createLizards();
+    this.createWizards();
 
-    this.bigZombies.children.each((_bigZombie: Phaser.GameObjects.GameObject) =>
-      (_bigZombie as BigZombie).setWalls(wallsLayer)
-    );
-
-    this.lizards = this.physics.add.group({
-      classType: Lizard,
-      createCallback: go => {
-        const lizard = go as Lizard;
-        lizard.body.onCollide = true;
-      },
-    });
-    EnemyAnims.createLizardAnims(this.anims);
-    map.getObjectLayer("Lizards")?.objects.forEach(lizardObject => {
-      const lizard = this.lizards.get(
-        lizardObject.x! + lizardObject.width! * 0.5,
-        lizardObject.y! - lizardObject.height! * 0.5,
-        TextureKeys.Lizard
-      ) as Lizard;
-      lizard.body.setSize(lizard.width * 0.9, lizard.height * 0.6);
-      lizard.body.offset.y = 10;
-    });
-
-    this.wizards = this.physics.add.group({
-      classType: Wizard,
-      createCallback: go => {
-        const wizard = go as Wizard;
-        wizard.body.onCollide = true;
-      },
-    });
-    EnemyAnims.createWizardAnims(this.anims);
-    map.getObjectLayer("Wizards")?.objects.forEach(wizardObject => {
-      const wizard = this.wizards.get(
-        wizardObject.x! + wizardObject.width! * 0.5,
-        wizardObject.y! - wizardObject.height! * 0.5,
-        TextureKeys.Wizard
-      ) as Wizard;
-      wizard.body.setSize(wizard.width * 0.9, wizard.height * 0.6);
-      wizard.body.offset.y = 10;
-    });
-
-    const fireballs = this.physics.add.group();
-    this.sparkles = this.add.particles(TextureKeys.Sparkle);
-
-    EventCenter.sceneEvents.on(Events.DoorOpened, this.handleDoorOpened, this);
-
-    EventCenter.sceneEvents.on(
-      Events.WizardFireballThrown,
-      this.handleWizardFireballThrown,
-      this
-    );
-
-    this.wizards.children.each((_wizard: Phaser.GameObjects.GameObject) => {
-      const wizard = _wizard as Wizard;
-      wizard.setWalls(wallsLayer);
-      wizard.setFireballs(fireballs);
-    });
-
-    const chests = this.physics.add.staticGroup({
-      classType: Chest,
-    });
-    map.getObjectLayer("Chests")?.objects.forEach(chestObject => {
-      chests.get(
-        chestObject.x! + chestObject.width! * 0.5,
-        chestObject.y! - chestObject.height! * 0.5,
-        TextureKeys.Treasure
-      );
-    });
+    this.addColliders();
 
     // Debug.debugDraw(wallsLayer, this);
-
-    this.physics.add.collider(this.player, wallsLayer);
-    this.physics.add.collider(
-      this.player,
-      this.doors,
-      handlePlayerDoorCollision,
-      processPlayerDoorCollision
-    );
-    this.physics.add.overlap(
-      this.player,
-      this.doors,
-      this.handlePlayerDoorOverlap,
-      processPlayerDoorOverlap,
-      this
-    );
-    this.physics.add.collider(this.player, chests, handlePlayerChestCollision);
-    this.physics.add.collider(this.bigZombies, wallsLayer);
-    this.physics.add.collider(this.bigZombies, chests);
-    this.physics.add.collider(this.lizards, wallsLayer);
-    this.physics.add.collider(this.lizards, chests);
-    this.physics.add.collider(this.wizards, wallsLayer);
-    this.physics.add.collider(this.wizards, chests);
-    this.playerBigZombiesCollider = this.physics.add.collider(
-      this.bigZombies,
-      this.player,
-      handlePlayerWeaponCollision(1)
-    );
-
-    this.playerLizardsCollider = this.physics.add.collider(
-      this.lizards,
-      this.player,
-      handlePlayerWeaponCollision(1)
-    );
-    this.playerWizardsCollider = this.physics.add.collider(
-      this.wizards,
-      this.player,
-      handlePlayerWeaponCollision(1)
-    );
-    this.playerFireballsCollider = this.physics.add.collider(
-      fireballs,
-      this.player,
-      this.handlePlayerFireballsCollision,
-      undefined,
-      this
-    );
-    this.physics.add.collider(knives, wallsLayer, handleKnifeWallCollision);
-    this.physics.add.collider(
-      knives,
-      this.bigZombies,
-      handleKnifeBigZombieCollision
-    );
-    this.physics.add.collider(knives, this.lizards, handleKnifeLizardCollision);
-    this.physics.add.collider(knives, this.wizards, handleKnifeWizardCollision);
-    this.physics.add.collider(
-      fireballs,
-      wallsLayer,
-      this.handleFireballCollision,
-      undefined,
-      this
-    );
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
@@ -292,6 +131,84 @@ export default class Game extends Phaser.Scene {
     });
   }
 
+  addColliders(): void {
+    this.physics.add.collider(this.player, this.wallsLayer);
+    this.physics.add.collider(
+      this.player,
+      this.doors,
+      handlePlayerDoorCollision,
+      processPlayerDoorCollision
+    );
+    this.physics.add.overlap(
+      this.player,
+      this.doors,
+      this.handlePlayerDoorOverlap,
+      processPlayerDoorOverlap,
+      this
+    );
+    this.physics.add.collider(
+      this.player,
+      this.chests,
+      handlePlayerChestCollision
+    );
+    this.physics.add.collider(this.bigZombies, this.wallsLayer);
+    this.physics.add.collider(this.bigZombies, this.chests);
+    this.physics.add.collider(this.lizards, this.wallsLayer);
+    this.physics.add.collider(this.lizards, this.chests);
+    this.physics.add.collider(this.wizards, this.wallsLayer);
+    this.physics.add.collider(this.wizards, this.chests);
+    this.playerBigZombiesCollider = this.physics.add.collider(
+      this.bigZombies,
+      this.player,
+      handlePlayerWeaponCollision(1)
+    );
+
+    this.playerLizardsCollider = this.physics.add.collider(
+      this.lizards,
+      this.player,
+      handlePlayerWeaponCollision(1)
+    );
+    this.playerWizardsCollider = this.physics.add.collider(
+      this.wizards,
+      this.player,
+      handlePlayerWeaponCollision(1)
+    );
+    this.playerFireballsCollider = this.physics.add.collider(
+      this.fireballs,
+      this.player,
+      this.handlePlayerFireballsCollision,
+      undefined,
+      this
+    );
+    this.physics.add.collider(
+      this.knives,
+      this.wallsLayer,
+      handleKnifeWallCollision
+    );
+    this.physics.add.collider(
+      this.knives,
+      this.bigZombies,
+      handleKnifeBigZombieCollision
+    );
+    this.physics.add.collider(
+      this.knives,
+      this.lizards,
+      handleKnifeLizardCollision
+    );
+    this.physics.add.collider(
+      this.knives,
+      this.wizards,
+      handleKnifeWizardCollision
+    );
+    this.physics.add.collider(
+      this.fireballs,
+      this.wallsLayer,
+      this.handleFireballCollision,
+      undefined,
+      this
+    );
+  }
+
   enterRoom(room: Room) {
     this.cameras.main.pan(
       ...room,
@@ -304,6 +221,129 @@ export default class Game extends Phaser.Scene {
         }
       }
     );
+  }
+
+  createBigZombies(): void {
+    this.bigZombies = this.physics.add.group({
+      classType: BigZombie,
+      createCallback: go => {
+        const bigZombie = go as BigZombie;
+        bigZombie.body.onCollide = true;
+      },
+    });
+    EnemyAnims.createBigZombieAnims(this.anims);
+    this.map.getObjectLayer("Boss")?.objects.forEach(bigZombieObject => {
+      const bigZombie = this.bigZombies.get(
+        bigZombieObject.x! + bigZombieObject.width! * 0.5,
+        bigZombieObject.y! - bigZombieObject.height! * 0.5,
+        TextureKeys.BigZombie
+      ) as BigZombie;
+      bigZombie.body.setSize(bigZombie.width * 0.9, bigZombie.height * 0.6);
+      bigZombie.body.offset.y = 10;
+    });
+
+    this.bigZombies.children.each((_bigZombie: Phaser.GameObjects.GameObject) =>
+      (_bigZombie as BigZombie).setWalls(this.wallsLayer)
+    );
+  }
+
+  createChests(): void {
+    this.chests = this.physics.add.staticGroup({
+      classType: Chest,
+    });
+    TreasureAnims.createChestAnims(this.anims);
+    this.map.getObjectLayer("Chests")?.objects.forEach(chestObject => {
+      this.chests.get(
+        chestObject.x! + chestObject.width! * 0.5,
+        chestObject.y! - chestObject.height! * 0.5,
+        TextureKeys.Treasure
+      );
+    });
+  }
+
+  createDoors(): void {
+    this.doors = this.physics.add.group({
+      classType: Door.Door,
+    });
+
+    EnvironmentAnims.createDoorAnims(this.anims);
+    EventCenter.sceneEvents.on(Events.DoorOpened, this.handleDoorOpened, this);
+    this.map.getObjectLayer("Doors")?.objects.forEach(_door => {
+      // TODO: we should abstract away calculating the coordinates
+      const door = this.doors.get(
+        _door.x! + _door.width! * 0.5,
+        _door.y! - _door.height! * 0.5,
+        TextureKeys.Doors
+      ) as Door.Door;
+      door.setPushable(false);
+      const doorData: { destination: string; room: string } =
+        _door?.properties?.reduce(
+          (
+            acc: { [key: string]: unknown },
+            property: { name: string; value: unknown }
+          ) => ((acc[property.name] = property.value), acc),
+          {}
+        );
+      door.setDestination(doorData.destination);
+      door.setRoom(doorData.room);
+      door.setDirection(getDoorDirection(_door));
+      this.mapObjects.doors[_door.name] = door;
+    });
+  }
+
+  createLizards(): void {
+    this.lizards = this.physics.add.group({
+      classType: Lizard,
+      createCallback: go => {
+        const lizard = go as Lizard;
+        lizard.body.onCollide = true;
+      },
+    });
+    EnemyAnims.createLizardAnims(this.anims);
+    this.map.getObjectLayer("Lizards")?.objects.forEach(lizardObject => {
+      const lizard = this.lizards.get(
+        lizardObject.x! + lizardObject.width! * 0.5,
+        lizardObject.y! - lizardObject.height! * 0.5,
+        TextureKeys.Lizard
+      ) as Lizard;
+      lizard.body.setSize(lizard.width * 0.9, lizard.height * 0.6);
+      lizard.body.offset.y = 10;
+    });
+  }
+
+  createWizards(): void {
+    this.wizards = this.physics.add.group({
+      classType: Wizard,
+      createCallback: go => {
+        const wizard = go as Wizard;
+        wizard.body.onCollide = true;
+      },
+    });
+    EnemyAnims.createWizardAnims(this.anims);
+    this.map.getObjectLayer("Wizards")?.objects.forEach(wizardObject => {
+      const wizard = this.wizards.get(
+        wizardObject.x! + wizardObject.width! * 0.5,
+        wizardObject.y! - wizardObject.height! * 0.5,
+        TextureKeys.Wizard
+      ) as Wizard;
+      wizard.body.setSize(wizard.width * 0.9, wizard.height * 0.6);
+      wizard.body.offset.y = 10;
+    });
+
+    this.fireballs = this.physics.add.group();
+    this.sparkles = this.add.particles(TextureKeys.Sparkle);
+
+    EventCenter.sceneEvents.on(
+      Events.WizardFireballThrown,
+      this.handleWizardFireballThrown,
+      this
+    );
+
+    this.wizards.children.each((_wizard: Phaser.GameObjects.GameObject) => {
+      const wizard = _wizard as Wizard;
+      wizard.setWalls(this.wallsLayer);
+      wizard.setFireballs(this.fireballs);
+    });
   }
 
   getDoor(door: string | undefined): Door.Door | undefined {
