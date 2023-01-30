@@ -293,6 +293,29 @@
         }, 
         {
          "draworder":"topdown",
+         "id":7,
+         "name":"Chests",
+         "objects":[
+                {
+                 "class":"Chest",
+                 "gid":99,
+                 "height":16,
+                 "id":48,
+                 "name":"chest1",
+                 "rotation":0,
+                 "visible":true,
+                 "width":16,
+                 "x":321.333333333333,
+                 "y":1282.66666666667
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":6,
          "name":"Boss",
          "objects":[
@@ -386,8 +409,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":7,
- "nextobjectid":46,
+ "nextlayerid":8,
+ "nextobjectid":50,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.9.2",
@@ -1001,6 +1024,19 @@
          "tilecount":8,
          "tileheight":34,
          "tilewidth":32
+        }, 
+        {
+         "columns":1,
+         "firstgid":99,
+         "image":"..\/items\/treasure.png",
+         "imageheight":160,
+         "imagewidth":16,
+         "margin":0,
+         "name":"treasure",
+         "spacing":0,
+         "tilecount":10,
+         "tileheight":16,
+         "tilewidth":16
         }],
  "tilewidth":16,
  "type":"map",

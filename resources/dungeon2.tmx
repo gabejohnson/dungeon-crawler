@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="46">
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="50">
  <editorsettings>
   <export target="../public/levels/dungeon-02.json" format="json"/>
  </editorsettings>
@@ -314,6 +314,9 @@
  <tileset firstgid="91" name="big_zombie" tilewidth="32" tileheight="34" tilecount="8" columns="1">
   <image source="../public/monsters/big_zombie.png" width="32" height="272"/>
  </tileset>
+ <tileset firstgid="99" name="treasure" tilewidth="16" tileheight="16" tilecount="10" columns="1">
+  <image source="../public/items/treasure.png" width="16" height="160"/>
+ </tileset>
  <layer id="1" name="Ground" width="100" height="100">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -537,6 +540,9 @@
     <property name="room" value="room2"/>
    </properties>
   </object>
+ </objectgroup>
+ <objectgroup id="7" name="Chests">
+  <object id="48" name="chest1" class="Chest" gid="99" x="321.333" y="1282.67" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="6" name="Boss" offsetx="16" offsety="-16">
   <object id="45" name="boss" class="BigZombie" gid="91" x="64" y="960" width="64" height="66"/>
