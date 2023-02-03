@@ -95,8 +95,6 @@ export default class Game extends Phaser.Scene {
 
     this.addColliders();
 
-    // Debug.debugDraw(wallsLayer, this);
-
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
       (
@@ -228,18 +226,16 @@ export default class Game extends Phaser.Scene {
       classType: BigZombie,
       createCallback: go => {
         const bigZombie = go as BigZombie;
-        bigZombie.body.onCollide = true;
+        bigZombie.initBody();
       },
     });
     EnemyAnims.createBigZombieAnims(this.anims);
     this.map.getObjectLayer("Boss")?.objects.forEach(bigZombieObject => {
-      const bigZombie = this.bigZombies.get(
+      this.bigZombies.get(
         bigZombieObject.x! + bigZombieObject.width! * 0.5,
         bigZombieObject.y! - bigZombieObject.height! * 0.5,
         TextureKeys.BigZombie
       ) as BigZombie;
-      bigZombie.body.setSize(bigZombie.width * 0.9, bigZombie.height * 0.6);
-      bigZombie.body.offset.y = 10;
     });
 
     this.bigZombies.children.each((_bigZombie: Phaser.GameObjects.GameObject) =>
@@ -296,18 +292,16 @@ export default class Game extends Phaser.Scene {
       classType: Lizard,
       createCallback: go => {
         const lizard = go as Lizard;
-        lizard.body.onCollide = true;
+        lizard.initBody();
       },
     });
     EnemyAnims.createLizardAnims(this.anims);
     this.map.getObjectLayer("Lizards")?.objects.forEach(lizardObject => {
-      const lizard = this.lizards.get(
+      this.lizards.get(
         lizardObject.x! + lizardObject.width! * 0.5,
         lizardObject.y! - lizardObject.height! * 0.5,
         TextureKeys.Lizard
       ) as Lizard;
-      lizard.body.setSize(lizard.width * 0.9, lizard.height * 0.6);
-      lizard.body.offset.y = 10;
     });
   }
 
@@ -316,18 +310,16 @@ export default class Game extends Phaser.Scene {
       classType: Wizard,
       createCallback: go => {
         const wizard = go as Wizard;
-        wizard.body.onCollide = true;
+        wizard.initBody();
       },
     });
     EnemyAnims.createWizardAnims(this.anims);
     this.map.getObjectLayer("Wizards")?.objects.forEach(wizardObject => {
-      const wizard = this.wizards.get(
+      this.wizards.get(
         wizardObject.x! + wizardObject.width! * 0.5,
         wizardObject.y! - wizardObject.height! * 0.5,
         TextureKeys.Wizard
       ) as Wizard;
-      wizard.body.setSize(wizard.width * 0.9, wizard.height * 0.6);
-      wizard.body.offset.y = 10;
     });
 
     this.fireballs = this.physics.add.group();

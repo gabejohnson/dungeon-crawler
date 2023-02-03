@@ -17,7 +17,11 @@ export default class Lizard extends Enemy {
     texture: string,
     frame?: string | number
   ) {
-    super(scene, x, y, texture, frame, { hitpoints: 2 });
+    super(scene, x, y, texture, frame, {
+      bodyOffset: { y: 10 },
+      bodySizeCoefficients: { height: 0.6, width: 0.9 },
+      hitpoints: 2,
+    });
 
     this.anims.play(AnimationKeys.LizardIdle);
   }

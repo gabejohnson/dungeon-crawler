@@ -13,11 +13,13 @@ export default class BigZombie extends Enemy {
   ) {
     super(scene, x, y, texture, frame, {
       attackFrequency: 2000,
+      bodyOffset: { y: 10 },
+      bodySizeCoefficients: { height: 0.7, width: 0.65 },
       damagedTime: 500,
-      hitpoints: 20,
+      hitpoints: 10,
       knockBack: -75,
       scale: 3,
-      speed: 75,
+      speed: 100,
     });
 
     this.anims.play(AnimationKeys.BigZombieIdle);

@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 import * as Utils from "~/utils/common";
 
+type BodyOffset = { x?: integer; y?: integer };
+
+type BodySizeCoefficients = { height: number; width: number };
+
 enum HealthState {
   Idle,
   Damage,
@@ -10,6 +14,8 @@ const Tint = { Damaged: 0xff0000, Idle: 0xffffff };
 
 type Stats = {
   attackFrequency?: integer;
+  bodyOffset?: BodyOffset;
+  bodySizeCoefficients?: BodySizeCoefficients;
   damagedTime?: integer;
   hitpoints?: integer;
   knockBack?: integer;
@@ -19,6 +25,8 @@ type Stats = {
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   private attackFrequency: integer;
+  private _bodyOffset?: BodyOffset;
+  private _bodySizeCoefficients: BodySizeCoefficients;
   private _damagedTime: integer;
   private _hitpoints: number;
   private knockBack: integer;
@@ -40,6 +48,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, texture, frame);
 
     this.attackFrequency = stats.attackFrequency ?? 1000;
+    this._bodyOffset = stats.bodyOffset;
+    this._bodySizeCoefficients = stats.bodySizeCoefficients ?? {
+      height: 1,
+      width: 1,
+    };
     this._damagedTime = stats.damagedTime ?? 50;
     this._hitpoints = stats.hitpoints ?? 1;
     this.knockBack = stats.knockBack ?? 200;
@@ -108,6 +121,15 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       return;
     }
     this.changeDirection(Utils.getRandomCardinalDirection());
+  }
+
+  initBody() {
+    this.body.setSize(
+      this.width * this._bodySizeCoefficients.width,
+      this.height * this._bodySizeCoefficients.height
+    );
+    this.body.offset.y = this._bodyOffset?.y ?? this.body.offset.y;
+    this.body.onCollide = true;
   }
 
   preUpdate(t: number, dt: number): void {
