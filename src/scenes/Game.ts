@@ -16,6 +16,7 @@ import Wizard from "~/enemies/Wizard";
 import Events from "~/consts/Events";
 import * as Door from "~/environment/Door";
 import Knife from "~/items/Knife";
+import Enemy from "~/enemies/Enemy";
 
 type Room = [number, number];
 
@@ -184,7 +185,7 @@ export default class Game extends Phaser.Scene {
     this.physics.add.collider(
       this.knives,
       this.bigZombies,
-      handleKnifeBigZombieCollision
+      handleKnifeEnemyCollision
     );
     this.physics.add.collider(
       this.player,
@@ -194,12 +195,12 @@ export default class Game extends Phaser.Scene {
     this.physics.add.collider(
       this.knives,
       this.lizards,
-      handleKnifeLizardCollision
+      handleKnifeEnemyCollision
     );
     this.physics.add.collider(
       this.knives,
       this.wizards,
-      handleKnifeWizardCollision
+      handleKnifeEnemyCollision
     );
     this.physics.add.collider(
       this.fireballs,
@@ -502,15 +503,12 @@ const handlePlayerWeaponCollision =
     Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
   };
 
-const handleKnifeBigZombieCollision = (
+const handleKnifeEnemyCollision = (
   _knife: Phaser.GameObjects.GameObject,
-  _bigZombie: Phaser.GameObjects.GameObject
+  _enemy: Phaser.GameObjects.GameObject
 ): void => {
-  (_bigZombie as BigZombie).handleDamage(
-    _knife as Phaser.Physics.Arcade.Sprite,
-    1
-  );
-  disableImage(_knife as Phaser.Physics.Arcade.Image);
+  (_enemy as Enemy).handleDamage(_knife as Knife, 1);
+  (_knife as Knife).disable();
 };
 
 const handleKnifeLizardCollision = (
@@ -525,13 +523,5 @@ const handleKnifePlayerCollision = (
   _: Phaser.GameObjects.GameObject,
   _knife: Phaser.GameObjects.GameObject
 ): void => {
-  disableImage(_knife as Phaser.Physics.Arcade.Image);
-};
-
-const handleKnifeWizardCollision = (
-  _knife: Phaser.GameObjects.GameObject,
-  _wizard: Phaser.GameObjects.GameObject
-): void => {
-  (_wizard as Wizard).handleDamage(_knife as Phaser.Physics.Arcade.Sprite, 1);
-  disableImage(_knife as Phaser.Physics.Arcade.Image);
+  (_knife as Knife).disable();
 };
