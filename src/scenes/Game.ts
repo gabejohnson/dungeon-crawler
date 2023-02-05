@@ -181,7 +181,11 @@ export default class Game extends Phaser.Scene {
       undefined,
       this
     );
-    this.physics.add.collider(this.knives, this.wallsLayer);
+    this.physics.add.collider(
+      this.knives,
+      this.wallsLayer,
+      handleKnifeWallLayerCollision
+    );
     this.physics.add.collider(
       this.knives,
       this.bigZombies,
@@ -514,12 +518,10 @@ const handleKnifeEnemyCollision = (
   );
 };
 
-const handleKnifeLizardCollision = (
-  _knife: Phaser.GameObjects.GameObject,
-  _lizard: Phaser.GameObjects.GameObject
+const handleKnifeWallLayerCollision = (
+  _knife: Phaser.GameObjects.GameObject
 ): void => {
-  (_lizard as Lizard).handleDamage(_knife as Phaser.Physics.Arcade.Sprite, 1);
-  disableImage(_knife as Phaser.Physics.Arcade.Image);
+  (_knife as Knife).bounce();
 };
 
 const handleKnifePlayerCollision = (

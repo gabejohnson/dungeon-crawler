@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import * as Utils from "~/utils/common";
 
 export default class Knife extends Phaser.Physics.Arcade.Sprite {
+  private inUse: boolean = false;
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -12,7 +13,12 @@ export default class Knife extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, texture, frame);
   }
 
+  bounce() {
+    this.setRotation(this.body.velocity.angle());
+  }
+
   disable(): void {
+    this.inUse = false;
     this.setActive(false);
     this.setVisible(false);
     const body = this.body as Phaser.Physics.Arcade.Body;
@@ -31,8 +37,11 @@ export default class Knife extends Phaser.Physics.Arcade.Sprite {
     playerPosition: { x: number; y: number },
     target: { x: number; y: number }
   ): void {
-    let vector = Utils.calculateUnitVector(playerPosition, target);
-
+    const vectors: [{ x: number; y: number }, { x: number; y: number }] = !this
+      .inUse
+      ? ((this.inUse = true), [playerPosition, target])
+      : [this, playerPosition];
+    const vector = Utils.calculateUnitVector(...vectors);
     const weaponOffset = 15;
     const weaponVelocity = 300;
     this.setRotation(vector.angle());
