@@ -15,6 +15,7 @@ import Chest from "~/items/Chest";
 import Wizard from "~/enemies/Wizard";
 import Events from "~/consts/Events";
 import * as Door from "~/environment/Door";
+import Knife from "~/items/Knife";
 
 type Room = [number, number];
 
@@ -72,7 +73,7 @@ export default class Game extends Phaser.Scene {
     );
 
     this.knives = this.physics.add.group({
-      classType: Phaser.Physics.Arcade.Image,
+      classType: Knife,
       bounceX: 1,
       bounceY: 1,
       maxSize: 1,

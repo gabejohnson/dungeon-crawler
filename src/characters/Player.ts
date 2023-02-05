@@ -6,6 +6,7 @@ import Chest from "~/items/Chest";
 import Events from "~/consts/Events";
 import * as Door from "~/environment/Door";
 import * as Utils from "~/utils/common";
+import Knife from "~/items/Knife";
 
 declare global {
   namespace Phaser.GameObjects {
@@ -38,6 +39,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   moveTarget?: Utils.Coordinates;
   sinceDamaged: number = 0;
   speed: number = 100;
+  weapon?: Knife;
 
   constructor(
     scene: Phaser.Scene,
@@ -212,20 +214,6 @@ const faceRight = (player: Player): void => {
 
 const faceUp = (player: Player): void => {
   player.anims.play(AnimationKeys.PlayerRunUp, true);
-};
-
-const useWeapon = (
-  origin: { x: number; y: number },
-  target: { x: number; y: number },
-  weapon: Phaser.Physics.Arcade.Image
-): void => {
-  const vector = Utils.calculateUnitVector(origin, target);
-  const weaponOffset = 15;
-  const weaponVelocity = 300;
-  weapon.setRotation(vector.angle());
-  weapon.setVelocity(vector.x * weaponVelocity, vector.y * weaponVelocity);
-  weapon.x += vector.x * weaponOffset;
-  weapon.y += vector.y * weaponOffset;
 };
 
 const getDirectionWithCursors = (
@@ -456,7 +444,10 @@ const attack = (player: Player): void => {
     player.x,
     player.y,
     TextureKeys.Knife
-  ) as Phaser.Physics.Arcade.Image;
+  ) as Knife;
+  if (player.weapon == null && weapon != null) {
+    player.weapon = weapon;
+  }
   if (weapon != null) {
     let [bodyWidth, bodyHeight] = [0, 0];
     switch (player.anims.currentAnim.key) {
@@ -473,7 +464,7 @@ const attack = (player: Player): void => {
         [bodyWidth, bodyHeight] = [weapon.height, weapon.width];
         break;
     }
-    enableWeapon({ width: bodyWidth, height: bodyHeight }, weapon);
-    useWeapon(player, player.aimTarget, weapon);
+    weapon.enable({ width: bodyWidth, height: bodyHeight });
   }
+  player.weapon?.use(player, player.aimTarget);
 };
