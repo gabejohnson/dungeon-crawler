@@ -73,7 +73,9 @@ export default class Game extends Phaser.Scene {
 
     this.knives = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Image,
-      maxSize: 3,
+      bounceX: 1,
+      bounceY: 1,
+      maxSize: 1,
     });
 
     this.wallsLayer = this.map
@@ -160,7 +162,6 @@ export default class Game extends Phaser.Scene {
       this.player,
       handlePlayerWeaponCollision(1)
     );
-
     this.playerLizardsCollider = this.physics.add.collider(
       this.lizards,
       this.player,
@@ -178,15 +179,16 @@ export default class Game extends Phaser.Scene {
       undefined,
       this
     );
-    this.physics.add.collider(
-      this.knives,
-      this.wallsLayer,
-      handleKnifeWallCollision
-    );
+    this.physics.add.collider(this.knives, this.wallsLayer);
     this.physics.add.collider(
       this.knives,
       this.bigZombies,
       handleKnifeBigZombieCollision
+    );
+    this.physics.add.collider(
+      this.player,
+      this.knives,
+      handleKnifePlayerCollision
     );
     this.physics.add.collider(
       this.knives,
@@ -478,14 +480,9 @@ const processPlayerDoorCollision = (
 ): boolean => !(door as Door.Door).isOpen;
 
 const processPlayerDoorOverlap = (
-  player: Phaser.GameObjects.GameObject,
+  _: Phaser.GameObjects.GameObject,
   door: Phaser.GameObjects.GameObject
 ): boolean => (door as Door.Door).isOpen;
-
-const handleKnifeWallCollision = (
-  knife: Phaser.GameObjects.GameObject,
-  _: Phaser.GameObjects.GameObject
-): void => disableImage(knife as Phaser.Physics.Arcade.Image);
 
 const disableImage = (image: Phaser.Physics.Arcade.Image): void => {
   image.setActive(false);
@@ -520,6 +517,13 @@ const handleKnifeLizardCollision = (
   _lizard: Phaser.GameObjects.GameObject
 ): void => {
   (_lizard as Lizard).handleDamage(_knife as Phaser.Physics.Arcade.Sprite, 1);
+  disableImage(_knife as Phaser.Physics.Arcade.Image);
+};
+
+const handleKnifePlayerCollision = (
+  _: Phaser.GameObjects.GameObject,
+  _knife: Phaser.GameObjects.GameObject
+): void => {
   disableImage(_knife as Phaser.Physics.Arcade.Image);
 };
 
