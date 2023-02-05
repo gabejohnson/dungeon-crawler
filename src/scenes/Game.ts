@@ -507,8 +507,11 @@ const handleKnifeEnemyCollision = (
   _knife: Phaser.GameObjects.GameObject,
   _enemy: Phaser.GameObjects.GameObject
 ): void => {
-  (_enemy as Enemy).handleDamage(_knife as Knife, 1);
-  (_knife as Knife).disable();
+  EventCenter.sceneEvents.emit(
+    Events.WeaponHitEnemy,
+    _knife as Knife,
+    _enemy as Enemy
+  );
 };
 
 const handleKnifeLizardCollision = (
