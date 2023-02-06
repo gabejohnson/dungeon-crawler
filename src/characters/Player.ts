@@ -67,12 +67,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(0, 0);
         this.healthState = HealthState.Dead;
       } else {
-        const velocity = new Phaser.Math.Vector2(
-          this.x - hitVelocity.x,
-          this.y - hitVelocity.y
-        )
-          .normalize()
-          .scale(200);
+        const velocity = Utils.calculateUnitVector(hitVelocity, this).scale(
+          200
+        );
 
         this.setVelocity(velocity.x, velocity.y);
         this.setTint(0xff0000);
