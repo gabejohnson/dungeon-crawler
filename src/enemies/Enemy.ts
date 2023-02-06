@@ -160,11 +160,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  canSeePlayer(playerPosition: { x: number; y: number }): boolean {
+  canSeeTarget(target: { x: number; y: number }): boolean {
     return (
-      (Math.abs(playerPosition.x - this.x) <= 1 ||
-        Math.abs(playerPosition.y - this.y) <= 1) &&
-      this.noWallsBlock(playerPosition)
+      (Math.abs(target.x - this.x) <= 1 || Math.abs(target.y - this.y) <= 1) &&
+      this.noWallsBlock(target)
     );
   }
 
@@ -198,10 +197,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.direction = Utils.Direction.None;
   }
 
-  update(playerPosition: Utils.Coordinates): void {
+  update(targetPosition: Utils.Coordinates): void {
     if (this.onCamera()) {
       if (this.shouldAttack()) {
-        this.attack(playerPosition);
+        this.attack(targetPosition);
       }
       super.update();
     }

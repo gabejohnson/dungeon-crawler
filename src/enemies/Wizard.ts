@@ -28,12 +28,12 @@ export default class Wizard extends Enemy {
     this.fireballs = fireballs;
   }
 
-  update(playerPosition: { x: number; y: number }): void {
+  update(target: { x: number; y: number }): void {
     if (this.onCamera()) {
-      if (!this.firing && this.canSeePlayer(playerPosition)) {
-        this.throwFireball(playerPosition);
+      if (!this.firing && this.canSeeTarget(target)) {
+        this.throwFireball(target);
       }
-      super.update(playerPosition);
+      super.update(target);
     }
   }
 

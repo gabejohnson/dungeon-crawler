@@ -36,13 +36,13 @@ export default class Knife extends Phaser.Physics.Arcade.Sprite {
   }
 
   use(
-    playerPosition: { x: number; y: number },
+    source: { x: number; y: number },
     target: { x: number; y: number }
   ): void {
     const vectors: [{ x: number; y: number }, { x: number; y: number }] = !this
       .inUse
-      ? ((this.inUse = true), [playerPosition, target])
-      : [this, playerPosition];
+      ? ((this.inUse = true), [source, target])
+      : [this, source];
     const vector = Utils.calculateUnitVector(...vectors);
     const weaponOffset = 15;
     const weaponVelocity = 300;
