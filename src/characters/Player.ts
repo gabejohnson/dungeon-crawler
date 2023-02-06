@@ -7,6 +7,7 @@ import Events from "~/consts/Events";
 import * as Door from "~/environment/Door";
 import * as Utils from "~/utils/common";
 import Knife from "~/items/Knife";
+import Enemy from "~/enemies/Enemy";
 
 declare global {
   namespace Phaser.GameObjects {
@@ -54,6 +55,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.direction = Utils.Direction.South;
   }
 
+  get dead(): boolean {
+    return this.health <= 0;
+  }
+
+  hitPlayer(damage: integer, hitVelocity: { x: integer; y: integer }): void {
+    if (this.healthState === HealthState.Idle) {
+      this.health -= damage;
+      if (this.dead) {
+        this.play(AnimationKeys.PlayerFaint);
+        this.setVelocity(0, 0);
+        this.healthState = HealthState.Dead;
+      } else {
+        const velocity = new Phaser.Math.Vector2(
+          this.x - hitVelocity.x,
+          this.y - hitVelocity.y
+        )
+          .normalize()
+          .scale(200);
+
+        this.setVelocity(velocity.x, velocity.y);
+        this.setTint(0xff0000);
+        this.sinceDamaged = 0;
+        this.healthState = HealthState.Damage;
+      }
+      EventCenter.sceneEvents.emit(Events.PlayerHealthChanged, this.health);
+    }
+    this.moveTarget = undefined;
+  }
+
   preUpdate(t: number, dt: number): void {
     super.preUpdate(t, dt);
     switch (this.healthState) {
@@ -75,7 +105,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(cursors: Phaser.Types.Input.Keyboard.CursorKeys): void {
-    if (cursors != null && !isDead(this)) {
+    if (cursors != null && !this.dead) {
       if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
         if (this.activeChest && !this.activeChest.isOpen) {
           this._coins += this.activeChest.open();
@@ -114,28 +144,6 @@ export const aimAt = (
   player: Player
 ): void => {
   player.aimTarget = target;
-};
-
-export const collideWithChest = (chest: Chest, player: Player): void => {
-  if (chest !== player.activeChest) {
-    player.activeChest = chest;
-    stop(player);
-  }
-};
-
-export const collideWithDoor = (door: Door.Door, player: Player): void => {
-  if (door !== player.activeDoor && !door.isOpen) {
-    player.activeDoor = door;
-    stop(player);
-  }
-};
-
-export const collideWithWeapon = (
-  weapon: { damage: number; x: number; y: number },
-  player: Player
-): void => {
-  handleDamage(weapon, player);
-  player.moveTarget = undefined;
 };
 
 const directionalKeyIsDown = ({
@@ -226,32 +234,6 @@ const getDirectionWithCursors = (
     west: cursors.left?.isDown,
   });
 
-const handleDamage = (
-  weapon: { damage: number; x: number; y: number },
-  player: Player
-): void => {
-  if (player.healthState === HealthState.Idle) {
-    player.health -= weapon.damage;
-    if (isDead(player)) {
-      killPlayer(player);
-      player.healthState = HealthState.Dead;
-    } else {
-      const direction = new Phaser.Math.Vector2(
-        player.x - weapon.x,
-        player.y - weapon.y
-      )
-        .normalize()
-        .scale(200);
-
-      injurePlayer(direction, player);
-
-      player.sinceDamaged = 0;
-      player.healthState = HealthState.Damage;
-    }
-    EventCenter.sceneEvents.emit(Events.PlayerHealthChanged, player.health);
-  }
-};
-
 const idle = (player: Player): void => {
   switch (player.anims.currentAnim.key) {
     case AnimationKeys.PlayerRunDown:
@@ -264,21 +246,6 @@ const idle = (player: Player): void => {
       player.anims.play(AnimationKeys.PlayerIdleUp, true);
       break;
   }
-  player.setVelocity(0, 0);
-};
-
-const injurePlayer = (
-  boundDirection: { x: number; y: number },
-  player: Player
-): void => {
-  player.setVelocity(boundDirection.x, boundDirection.y);
-  player.setTint(0xff0000);
-};
-
-export const isDead = (player: Player): boolean => player.health <= 0;
-
-const killPlayer = (player: Player): void => {
-  player.play(AnimationKeys.PlayerFaint);
   player.setVelocity(0, 0);
 };
 
@@ -468,3 +435,28 @@ const attack = (player: Player): void => {
   }
   player.weapon?.use(player, player.aimTarget);
 };
+
+EventCenter.sceneEvents.addListener(
+  Events.EnemyHitPlayer,
+  (damage: integer, player: Player, enemy: Enemy) =>
+    player.hitPlayer(damage, enemy)
+);
+
+EventCenter.sceneEvents.addListener(
+  Events.PlayerHitChest,
+  (player: Player, chest: Chest) => {
+    if (chest !== player.activeChest) {
+      player.activeChest = chest;
+      stop(player);
+    }
+  }
+);
+EventCenter.sceneEvents.addListener(
+  Events.PlayerHitDoor,
+  (player: Player, door: Door.Door) => {
+    if (door !== player.activeDoor && !door.isOpen) {
+      player.activeDoor = door;
+      stop(player);
+    }
+  }
+);

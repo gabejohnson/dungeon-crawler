@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import Events from "~/consts/Events";
+import * as EventCenter from "~/events/EventCenter";
 import * as Utils from "~/utils/common";
 
 type BodyOffset = { x?: integer; y?: integer };
@@ -205,3 +207,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 }
+
+EventCenter.sceneEvents.addListener(
+  Events.WeaponHitEnemy,
+  (weapon: Phaser.Physics.Arcade.Sprite, enemy: Enemy) => {
+    enemy.handleDamage(weapon as Phaser.Physics.Arcade.Sprite, 1);
+  }
+);

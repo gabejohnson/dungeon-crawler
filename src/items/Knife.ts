@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import Events from "~/consts/Events";
+import * as EventCenter from "~/events/EventCenter";
 import * as Utils from "~/utils/common";
 
 export default class Knife extends Phaser.Physics.Arcade.Sprite {
@@ -50,3 +52,15 @@ export default class Knife extends Phaser.Physics.Arcade.Sprite {
     this.y += vector.y * weaponOffset;
   }
 }
+
+EventCenter.sceneEvents.addListener(Events.WeaponHitEnemy, (weapon: Knife) =>
+  weapon.disable()
+);
+
+EventCenter.sceneEvents.addListener(Events.WeaponHitPlayer, (weapon: Knife) =>
+  weapon.disable()
+);
+
+EventCenter.sceneEvents.addListener(Events.WeaponHitWall, (weapon: Knife) =>
+  weapon.bounce()
+);

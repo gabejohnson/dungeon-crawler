@@ -358,7 +358,7 @@ export default class Game extends Phaser.Scene {
 
   update(t: number, dt: number): void {
     this.player.update(this.cursors);
-    if (Player.isDead(this.player)) {
+    if (this.player.dead) {
       if (this.playerBigZombiesCollider?.world) {
         this.playerBigZombiesCollider?.destroy();
       }
