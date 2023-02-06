@@ -162,17 +162,17 @@ export default class Game extends Phaser.Scene {
     this.playerBigZombiesCollider = this.physics.add.collider(
       this.bigZombies,
       this.player,
-      handlePlayerWeaponCollision(1)
+      handlePlayerEnemyCollision(1)
     );
     this.playerLizardsCollider = this.physics.add.collider(
       this.lizards,
       this.player,
-      handlePlayerWeaponCollision(1)
+      handlePlayerEnemyCollision(1)
     );
     this.playerWizardsCollider = this.physics.add.collider(
       this.wizards,
       this.player,
-      handlePlayerWeaponCollision(1)
+      handlePlayerEnemyCollision(1)
     );
     this.playerFireballsCollider = this.physics.add.collider(
       this.fireballs,
@@ -439,7 +439,7 @@ export default class Game extends Phaser.Scene {
     fireball: Phaser.GameObjects.GameObject
   ): void {
     this.handleFireballCollision(fireball, player);
-    handlePlayerWeaponCollision(1)(player, fireball);
+    handlePlayerEnemyCollision(1)(player, fireball);
   }
 }
 
@@ -456,12 +456,24 @@ const getDoorDirection = (
 const handlePlayerChestCollision = (
   player: Phaser.GameObjects.GameObject,
   chest: Phaser.GameObjects.GameObject
-): void => Player.collideWithChest(chest as Chest, player as Player.Player);
+): void => {
+  EventCenter.sceneEvents.emit(
+    Events.PlayerHitChest,
+    player as Player.Player,
+    chest as Chest
+  );
+};
 
 const handlePlayerDoorCollision = (
   player: Phaser.GameObjects.GameObject,
   door: Phaser.GameObjects.GameObject
-): void => Player.collideWithDoor(door as Door.Door, player as Player.Player);
+): void => {
+  EventCenter.sceneEvents.emit(
+    Events.PlayerHitDoor,
+    player as Player.Player,
+    door as Door.Door
+  );
+};
 
 const spriteIsInSprite = ({
   innerSprite,
@@ -497,14 +509,18 @@ const disableImage = (image: Phaser.Physics.Arcade.Image): void => {
   body.setEnable(false);
 };
 
-const handlePlayerWeaponCollision =
+const handlePlayerEnemyCollision =
   (damage: number) =>
   (
     player: Phaser.GameObjects.GameObject,
-    weapon: Phaser.GameObjects.GameObject
+    _enemy: Phaser.GameObjects.GameObject
   ): void => {
-    const { x, y } = weapon as unknown as { x: number; y: number };
-    Player.collideWithWeapon({ damage, x, y }, player as Player.Player);
+    EventCenter.sceneEvents.emit(
+      Events.EnemyHitPlayer,
+      damage,
+      player,
+      _enemy as Enemy
+    );
   };
 
 const handleKnifeEnemyCollision = (
@@ -521,12 +537,12 @@ const handleKnifeEnemyCollision = (
 const handleKnifeWallLayerCollision = (
   _knife: Phaser.GameObjects.GameObject
 ): void => {
-  (_knife as Knife).bounce();
+  EventCenter.sceneEvents.emit(Events.WeaponHitWall, _knife as Knife);
 };
 
 const handleKnifePlayerCollision = (
   _: Phaser.GameObjects.GameObject,
   _knife: Phaser.GameObjects.GameObject
 ): void => {
-  (_knife as Knife).disable();
+  EventCenter.sceneEvents.emit(Events.WeaponHitPlayer, _knife as Knife);
 };
